@@ -41,9 +41,9 @@
     <label class="lbl" for="input">Texto</label>
     <textarea id="input" spellcheck="false" placeholder="Escribe o pega el texto a hashear…"></textarea>
     <div class="row">
-      <button class="primary" id="btn-run" data-run>calcular</button>
-      <button id="btn-copy-all">copiar todo</button>
-      <button class="ghost" id="btn-clear">limpiar</button>
+      <button type="button" class="primary" id="btn-run" data-run>calcular</button>
+      <button type="button" id="btn-copy-all">copiar todo</button>
+      <button type="button" class="ghost" id="btn-clear">limpiar</button>
     </div>
     <p class="hint">Se recalcula en vivo · los hashes son de <b>UTF-8</b> · MD5 y SHA-1 son débiles para seguridad, sirven para checksums</p>
   </section>
@@ -51,11 +51,11 @@
   <section class="card">
     <h2>Resultado</h2>
     <div id="all">
-      <div class="hashrow" data-alg="md5"><span class="alg">MD5</span><span class="val pending" data-out="md5">—</span><button class="copy-mini" data-copy-val="md5">copiar</button></div>
-      <div class="hashrow" data-alg="sha1"><span class="alg">SHA-1</span><span class="val pending" data-out="sha1">—</span><button class="copy-mini" data-copy-val="sha1">copiar</button></div>
-      <div class="hashrow" data-alg="sha256"><span class="alg">SHA-256</span><span class="val pending" data-out="sha256">—</span><button class="copy-mini" data-copy-val="sha256">copiar</button></div>
-      <div class="hashrow" data-alg="sha384"><span class="alg">SHA-384</span><span class="val pending" data-out="sha384">—</span><button class="copy-mini" data-copy-val="sha384">copiar</button></div>
-      <div class="hashrow" data-alg="sha512"><span class="alg">SHA-512</span><span class="val pending" data-out="sha512">—</span><button class="copy-mini" data-copy-val="sha512">copiar</button></div>
+      <div class="hashrow" data-alg="md5"><span class="alg">MD5</span><span class="val pending" data-out="md5">—</span><button type="button" class="copy-mini" data-copy-val="md5">copiar</button></div>
+      <div class="hashrow" data-alg="sha1"><span class="alg">SHA-1</span><span class="val pending" data-out="sha1">—</span><button type="button" class="copy-mini" data-copy-val="sha1">copiar</button></div>
+      <div class="hashrow" data-alg="sha256"><span class="alg">SHA-256</span><span class="val pending" data-out="sha256">—</span><button type="button" class="copy-mini" data-copy-val="sha256">copiar</button></div>
+      <div class="hashrow" data-alg="sha384"><span class="alg">SHA-384</span><span class="val pending" data-out="sha384">—</span><button type="button" class="copy-mini" data-copy-val="sha384">copiar</button></div>
+      <div class="hashrow" data-alg="sha512"><span class="alg">SHA-512</span><span class="val pending" data-out="sha512">—</span><button type="button" class="copy-mini" data-copy-val="sha512">copiar</button></div>
     </div>
   </section>
 </main>

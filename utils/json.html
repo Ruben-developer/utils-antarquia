@@ -28,10 +28,10 @@
     <label class="lbl" for="input">Entrada</label>
     <textarea id="input" spellcheck="false" style="min-height:180px" placeholder='{"hola":"mundo","n":[1,2,3]}'></textarea>
     <div class="row">
-      <button class="primary" id="btn-format" data-run>formatear</button>
-      <button id="btn-min">minificar</button>
-      <button id="btn-sort">ordenar claves</button>
-      <button class="ghost" id="btn-clear">limpiar</button>
+      <button type="button" class="primary" id="btn-format" data-run>formatear</button>
+      <button type="button" id="btn-min">minificar</button>
+      <button type="button" id="btn-sort">ordenar claves</button>
+      <button type="button" class="ghost" id="btn-clear">limpiar</button>
       <select id="indent" style="width:auto;padding:10px 14px">
         <option value="2">2 espacios</option>
         <option value="4">4 espacios</option>
@@ -45,8 +45,8 @@
     <label class="lbl" for="output">Resultado</label>
     <div class="out" id="output" style="max-height:52vh;overflow:auto"></div>
     <div class="row">
-      <button data-copy="#output">copiar</button>
-      <button class="ghost" id="btn-download">descargar .json</button>
+      <button type="button" data-copy="#output">copiar</button>
+      <button type="button" class="ghost" id="btn-download">descargar .json</button>
     </div>
   </section>
 </main>

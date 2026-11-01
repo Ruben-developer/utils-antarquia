@@ -28,10 +28,10 @@
     <label class="lbl" for="input">Entrada</label>
     <textarea id="input" spellcheck="false" placeholder="Escribe o pega texto aquí…"></textarea>
     <div class="row">
-      <button class="primary" id="btn-enc" data-run>Codificar →</button>
-      <button id="btn-dec">← Decodificar</button>
-      <button class="ghost" id="btn-swap">↕ swap</button>
-      <button class="ghost" id="btn-clear">limpiar</button>
+      <button type="button" class="primary" id="btn-enc" data-run>Codificar →</button>
+      <button type="button" id="btn-dec">← Decodificar</button>
+      <button type="button" class="ghost" id="btn-swap">↕ swap</button>
+      <button type="button" class="ghost" id="btn-clear">limpiar</button>
     </div>
   </section>
 
@@ -39,8 +39,8 @@
     <label class="lbl" for="output">Resultado</label>
     <div class="out" id="output"></div>
     <div class="row">
-      <button data-copy="#output">copiar</button>
-      <button class="ghost" id="btn-download">descargar .txt</button>
+      <button type="button" data-copy="#output">copiar</button>
+      <button type="button" class="ghost" id="btn-download">descargar .txt</button>
     </div>
     <p class="hint"><b>Ctrl/⌘ + Enter</b> codifica · se convierte en vivo mientras escribes</p>
   </section>

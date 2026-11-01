@@ -35,10 +35,10 @@
     <label class="lbl" for="input">Entrada</label>
     <textarea id="input" spellcheck="false" placeholder="https://ejemplo.cl/buscar?q=hola mundo&lang=es"></textarea>
     <div class="row">
-      <button class="primary" id="btn-comp" data-run>encode componente</button>
-      <button id="btn-uri">encode URI</button>
-      <button id="btn-dec">decodificar</button>
-      <button class="ghost" id="btn-swap">↕ swap</button>
+      <button type="button" class="primary" id="btn-comp" data-run>encode componente</button>
+      <button type="button" id="btn-uri">encode URI</button>
+      <button type="button" id="btn-dec">decodificar</button>
+      <button type="button" class="ghost" id="btn-swap">↕ swap</button>
     </div>
     <p class="hint">Componente escapa <b>todos</b> los caracteres reservados; URI completa deja intactos <b>:/?#&amp;=</b>.</p>
   </section>
@@ -47,8 +47,8 @@
     <label class="lbl" for="output">Resultado</label>
     <div class="out" id="output"></div>
     <div class="row">
-      <button data-copy="#output">copiar</button>
-      <button class="ghost" id="btn-clear">limpiar</button>
+      <button type="button" data-copy="#output">copiar</button>
+      <button type="button" class="ghost" id="btn-clear">limpiar</button>
     </div>
     <p class="hint" id="status"></p>
   </section>

@@ -50,8 +50,8 @@
     <div class="now"><span id="epoch-s">—</span><small>epoch (s)</small></div>
     <div class="clock" id="clock">—</div>
     <div class="row">
-      <button class="primary" id="btn-now">usar este instante</button>
-      <button data-copy="#epoch-s">copiar epoch</button>
+      <button type="button" class="primary" id="btn-now">usar este instante</button>
+      <button type="button" data-copy="#epoch-s">copiar epoch</button>
     </div>
   </section>
 
@@ -60,19 +60,19 @@
     <label class="lbl" for="input">Epoch (s o ms) o fecha (2024-05-01 12:30, ISO, etc.)</label>
     <input type="text" id="input" spellcheck="false" placeholder="1714570200 · 1714570200000 · 2024-05-01T12:30:00Z">
     <div class="row">
-      <button class="primary" id="btn-run" data-run>convertir</button>
-      <button class="ghost" id="btn-clear">limpiar</button>
+      <button type="button" class="primary" id="btn-run" data-run>convertir</button>
+      <button type="button" class="ghost" id="btn-clear">limpiar</button>
     </div>
     <p class="hint" id="status">Los números de 10 dígitos se leen como segundos; de 13, como milisegundos.</p>
   </section>
 
   <section class="card" id="result-card" hidden>
     <h2>Resultado</h2>
-    <div class="rowline"><span class="k">Local</span><span class="v" id="r-local">—</span><button class="mini" data-copy-val="r-local">copiar</button></div>
-    <div class="rowline"><span class="k">UTC</span><span class="v" id="r-utc">—</span><button class="mini" data-copy-val="r-utc">copiar</button></div>
-    <div class="rowline"><span class="k">ISO 8601</span><span class="v" id="r-iso">—</span><button class="mini" data-copy-val="r-iso">copiar</button></div>
-    <div class="rowline"><span class="k">Epoch (s)</span><span class="v" id="r-s">—</span><button class="mini" data-copy-val="r-s">copiar</button></div>
-    <div class="rowline"><span class="k">Epoch (ms)</span><span class="v" id="r-ms">—</span><button class="mini" data-copy-val="r-ms">copiar</button></div>
+    <div class="rowline"><span class="k">Local</span><span class="v" id="r-local">—</span><button type="button" class="mini" data-copy-val="r-local">copiar</button></div>
+    <div class="rowline"><span class="k">UTC</span><span class="v" id="r-utc">—</span><button type="button" class="mini" data-copy-val="r-utc">copiar</button></div>
+    <div class="rowline"><span class="k">ISO 8601</span><span class="v" id="r-iso">—</span><button type="button" class="mini" data-copy-val="r-iso">copiar</button></div>
+    <div class="rowline"><span class="k">Epoch (s)</span><span class="v" id="r-s">—</span><button type="button" class="mini" data-copy-val="r-s">copiar</button></div>
+    <div class="rowline"><span class="k">Epoch (ms)</span><span class="v" id="r-ms">—</span><button type="button" class="mini" data-copy-val="r-ms">copiar</button></div>
     <div class="rowline"><span class="k">Relativo</span><span class="v" id="r-rel">—</span></div>
   </section>
 </main>

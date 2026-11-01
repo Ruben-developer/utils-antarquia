@@ -1,0 +1,15 @@
+{
+  "extends": ["html-validate:recommended"],
+  "rules": {
+    "doctype-style": ["error", { "style": "lowercase" }],
+    "no-inline-style": "off",
+    "attribute-boolean-style": "off",
+    "void-style": "off",
+    "long-title": "off",
+    "prefer-tbody": "off",
+    "wcag/h30": "warn",
+    "wcag/h63": "warn",
+    "prefer-native-element": "warn",
+    "no-trailing-whitespace": "warn"
+  }
+}

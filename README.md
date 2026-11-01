@@ -75,6 +75,18 @@ GitHub Pages sirve `main` desde la raíz. Para el dominio propio:
 1. Crea un registro `CNAME` en DNS: `utils` → `ruben-developer.github.io`.
 2. Agrega un archivo `CNAME` con `utils.antarquia.cl` y activa *Enforce HTTPS*.
 
+## Seguridad y calidad
+
+- **Sin backend, sin CDN, sin tracking.** Todo corre en el navegador; ninguna
+  herramienta envía datos a un servidor.
+- **Dependencias vendorizadas** en `assets/vendor/`, con su licencia al lado:
+  `qrcode.js` (MIT) y `jsQR` (Apache-2.0). No se cargan desde ninguna CDN.
+- **CI** (`.github/workflows/ci.yml`): valida el HTML, comprueba que el panal no
+  enlace a archivos inexistentes y escanea secretos con gitleaks.
+- **Cómo reportar un fallo**: ver [`SECURITY.md`](SECURITY.md).
+
 ## Licencia
 
-MIT.
+Código bajo licencia MIT (ver [`LICENSE`](LICENSE)). Las herramientas y su
+contenido se pueden copiar y reutilizar citando la fuente.
+
