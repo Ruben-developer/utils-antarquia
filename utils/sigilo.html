@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sigilo — Utils Antarquía</title>
+<meta name="description" content="Genera un QR con la silueta Ⓐ de Antarquía. Nivel de corrección H, tres formas, descarga PNG y SVG, verificado en el navegador.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 92,27 92,73 50,96 8,73 8,27' fill='%23ffc800'/%3E%3Cpolygon points='50,14 84,33 84,67 50,86 16,67 16,33' fill='%230a0a0a'/%3E%3C/svg%3E">
+<style>
+  /* ---------- mesa de esténcil ---------- */
+  :root{
+    --bg:#08090b;
+    --panel:#0d0f13;
+    --panel-2:#111419;
+    --line:#252a34;
+    --line-2:#323844;
+    --text:#e9e6dc;
+    --muted:#8d94a3;
+    --dim:#5b6270;
+    --yellow:#ffc800;
+    --paper:#efe7d3;
+    --ink:#16130d;
+    --ok:#8fe06a;
+    --bad:#ff6b5e;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+    background-size:28px 28px;
+    color:var(--text);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    min-height:100vh;display:flex;flex-direction:column;
+    overflow-x:hidden;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--yellow);color:#000}
+  [hidden]{display:none!important}
+
+  /* ---------- barra ---------- */
+  .snav{
+    width:100%;max-width:1120px;margin:0 auto;
+    padding:20px 24px 16px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border-bottom:1px solid var(--line);
+  }
+  .sback{
+    font-family:var(--mono);font-size:10.5px;font-weight:700;
+    letter-spacing:.16em;text-transform:uppercase;text-decoration:none;
+    color:var(--text);background:var(--panel);
+    border:1px solid var(--line-2);padding:8px 14px;
+    transition:background .14s ease,color .14s ease,border-color .14s ease;
+  }
+  .sback:hover,.sback:focus-visible{background:var(--yellow);border-color:var(--yellow);color:#000;outline:none}
+  .sbrand{
+    font-family:var(--mono);font-size:10px;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--dim);white-space:nowrap;
+  }
+  .sbrand b{color:var(--yellow)}
+
+  /* ---------- cabecera ---------- */
+  .sw{flex:1;width:100%;max-width:1120px;margin:0 auto;padding:34px 24px 60px}
+  .shead{position:relative;margin-bottom:30px}
+  .smeta{
+    display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);
+    border-top:1px solid var(--line);padding-top:10px;
+  }
+  h1{
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    font-weight:900;font-size:clamp(50px,11vw,104px);
+    line-height:.84;letter-spacing:-.055em;text-transform:lowercase;
+    margin:16px 0 0;color:var(--yellow);
+  }
+  @supports (-webkit-text-stroke:1px #000){
+    h1{color:transparent;-webkit-text-stroke:2px var(--yellow)}
+  }
+  h1 sup{
+    -webkit-text-stroke:0;color:var(--yellow);
+    font-family:var(--mono);font-size:.16em;font-weight:700;
+    letter-spacing:0;vertical-align:super;margin-left:.18em;
+  }
+  .slead{max-width:54ch;margin-top:16px;font-size:15px;line-height:1.6;color:#a8aeb9}
+  .slead b{color:var(--text);font-weight:600}
+  .slead code{font-family:var(--mono);font-size:.92em;color:var(--yellow)}
+
+  /* ---------- disposición ---------- */
+  .layout{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);gap:28px;align-items:start}
+  @media (max-width:900px){.layout{grid-template-columns:1fr}}
+
+  /* ---------- espécimen ---------- */
+  .stage{position:relative;padding:18px}
+  .corner{position:absolute;width:16px;height:16px;border:0 solid var(--yellow);opacity:.9}
+  .corner.tl{top:0;left:0;border-top-width:1px;border-left-width:1px}
+  .corner.tr{top:0;right:0;border-top-width:1px;border-right-width:1px}
+  .corner.bl{bottom:0;left:0;border-bottom-width:1px;border-left-width:1px}
+  .corner.br{bottom:0;right:0;border-bottom-width:1px;border-right-width:1px}
+  .paper{
+    background:var(--paper);
+    background-image:radial-gradient(#ddd2b8 1px,transparent 1px);
+    background-size:14px 14px;
+    padding:clamp(14px,3.4vw,26px);
+    box-shadow:0 26px 70px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.5);
+    position:relative;
+  }
+  .paper canvas{display:block;width:100%;height:auto;background:#fffdf6;border:1px solid rgba(22,19,13,.14)}
+  .spec-cap{
+    display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    margin-top:12px;font-family:var(--mono);font-size:9px;
+    letter-spacing:.16em;text-transform:uppercase;color:#6d6453;
+  }
+  .spec-cap b{color:#16130d}
+  .stage-note{
+    margin-top:16px;font-family:var(--mono);font-size:10px;line-height:1.7;
+    color:var(--dim);letter-spacing:.04em;
+  }
+
+  /* ---------- controles ---------- */
+  .stack{display:flex;flex-direction:column;gap:18px}
+  .panel{border:1px solid var(--line);background:var(--panel);padding:16px 16px 18px}
+  .ph{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    font-family:var(--mono);font-size:9.5px;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:14px;
+  }
+  .ph b{color:var(--yellow);font-weight:700}
+  .fl{
+    display:block;font-family:var(--mono);font-size:9px;font-weight:700;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--dim);
+    margin-bottom:8px;
+  }
+  textarea{
+    width:100%;background:#080a0d;border:1px solid var(--line-2);
+    color:var(--text);border-radius:0;padding:11px 12px;
+    font-family:var(--mono);font-size:12.5px;line-height:1.5;
+    resize:vertical;min-height:84px;outline:none;
+    transition:border-color .14s ease,box-shadow .14s ease;
+  }
+  textarea:focus{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(255,200,0,.13)}
+  textarea::placeholder{color:#4d5462}
+
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line-2)}
+  .seg button{
+    font-family:var(--mono);font-size:10px;font-weight:700;
+    letter-spacing:.08em;text-transform:uppercase;
+    background:transparent;color:var(--muted);border:0;
+    border-right:1px solid var(--line-2);padding:11px 6px;
+    cursor:pointer;transition:background .14s ease,color .14s ease;
+  }
+  .seg button:last-child{border-right:0}
+  .seg button:hover{background:#171b22;color:var(--text)}
+  .seg button.on{background:var(--yellow);color:#000}
+  .seg button:focus-visible{outline:2px solid var(--yellow);outline-offset:-3px}
+
+  .ctl{margin-top:16px}
+  .ctl:first-of-type{margin-top:0}
+  .ctl-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .ctl-top label{
+    font-family:var(--mono);font-size:9px;font-weight:700;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--dim);
+  }
+  .ctl-top output{
+    font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+    color:var(--yellow);background:#171b22;border:1px solid var(--line-2);
+    padding:1px 7px;min-width:44px;text-align:center;
+  }
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:20px;
+    background:transparent;cursor:pointer;display:block;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line-2)}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:13px;height:13px;
+    margin-top:-5.5px;background:var(--yellow);border:0;border-radius:0;
+    box-shadow:0 0 0 3px var(--panel);
+  }
+  input[type=range]::-moz-range-track{height:2px;background:var(--line-2)}
+  input[type=range]::-moz-range-thumb{
+    width:13px;height:13px;background:var(--yellow);border:0;border-radius:0;
+  }
+  input[type=range]:focus-visible{outline:1px solid var(--yellow);outline-offset:4px}
+
+  .row{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+  .btn{
+    font-family:var(--mono);font-size:10px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;
+    color:var(--yellow);background:transparent;
+    border:1px solid var(--line-2);border-radius:0;
+    padding:10px 15px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;
+    transition:background .14s ease,color .14s ease,border-color .14s ease;
+  }
+  .btn:hover,.btn:focus-visible{background:#1a1e26;border-color:var(--yellow);outline:none}
+  .btn.primary{background:var(--yellow);border-color:var(--yellow);color:#000}
+  .btn.primary:hover{background:#ffd83d;border-color:#ffd83d}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+
+  .status{
+    display:flex;align-items:center;gap:9px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+    color:var(--muted);border:1px solid var(--line);
+    background:var(--panel-2);padding:9px 12px;margin-top:16px;
+  }
+  .status i{width:8px;height:8px;background:var(--dim);flex:0 0 auto;transition:background .2s ease}
+  .status.ok i{background:var(--ok);box-shadow:0 0 10px rgba(143,224,106,.55)}
+  .status.warn i{background:var(--yellow);box-shadow:0 0 10px rgba(255,200,0,.55)}
+  .status.bad i{background:var(--bad);box-shadow:0 0 10px rgba(255,107,94,.55)}
+
+  .hint{
+    font-family:var(--mono);font-size:10px;line-height:1.7;
+    color:var(--dim);margin-top:12px;
+  }
+  .hint b{color:var(--muted);font-weight:700}
+
+  /* ---------- pie ---------- */
+  .sfoot{
+    border-top:1px solid var(--line);padding:16px 24px 26px;
+    display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    max-width:1120px;width:100%;margin:0 auto;
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--dim);
+  }
+  .sfoot a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line-2)}
+  .sfoot a:hover{color:var(--yellow);border-color:var(--yellow)}
+
+  /* ---------- aviso ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);
+    background:var(--yellow);color:#000;
+    font-family:var(--mono);font-size:10.5px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;
+    padding:11px 18px;opacity:0;pointer-events:none;
+    transition:opacity .18s ease,transform .18s ease;z-index:99;
+    box-shadow:0 10px 40px rgba(255,200,0,.28);
+  }
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:560px){
+    .snav,.sw,.sfoot{padding-left:16px;padding-right:16px}
+    .sw{padding-top:26px}
+    .stage{padding:12px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="snav">
+  <a class="sback" href="../index.html">← panal</a>
+  <div class="sbrand"><b>utils</b> / antarquía</div>
+</nav>
+
+<main class="sw">
+  <header class="shead">
+    <div class="smeta"><span>ficha 10 · sello de tinta</span><span>qr nivel h · corrección alta</span></div>
+    <h1>sigilo<sup>Ⓐ</sup></h1>
+    <p class="slead">Un QR que lleva la <b>Ⓐ</b> grabada. Elige la forma, ajusta el grosor y los puntos, y llévate el sello en <code>png</code> o <code>svg</code>. Se verifica solo, aquí mismo.</p>
+  </header>
+
+  <div class="layout">
+    <section class="stage" aria-label="Vista previa del QR">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div class="paper">
+        <canvas id="qr" width="960" height="960" role="img" aria-label="Código QR generado con la silueta de Antarquía"></canvas>
+        <div class="spec-cap">
+          <span id="fname"><b>sigilo</b>-circulo.png</span>
+          <span id="vmeta">nivel H · 0 módulos</span>
+        </div>
+      </div>
+      <p class="stage-note">el símbolo se imprime con tinta y módulos: sin imágenes externas, sin servicios.</p>
+    </section>
+
+    <div class="stack">
+      <section class="panel">
+        <div class="ph"><span>01 · contenido</span><b>texto / url</b></div>
+        <label class="fl" for="content">lo que guarda el QR</label>
+        <textarea id="content" spellcheck="false" placeholder="https://utils.antarquia.cl">https://utils.antarquia.cl</textarea>
+        <p class="hint">Se usa corrección de errores <b>H</b> (≈30% recuperable): por eso aguanta la marca encima.</p>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><span>02 · forma</span><b>silueta</b></div>
+        <div class="seg" role="group" aria-label="Forma de la silueta">
+          <button type="button" data-shape="circulo" class="on">círculo Ⓐ</button>
+          <button type="button" data-shape="a">A sola</button>
+          <button type="button" data-shape="negativa">negativa</button>
+        </div>
+
+        <div class="ctl">
+          <div class="ctl-top"><label for="weight">grosor</label><output id="weight-v">1.0</output></div>
+          <input type="range" id="weight" min="0.4" max="2.2" step="0.1" value="1">
+        </div>
+        <div class="ctl">
+          <div class="ctl-top"><label for="dot">puntos de fondo</label><output id="dot-v">0.40</output></div>
+          <input type="range" id="dot" min="0.28" max="0.5" step="0.02" value="0.4">
+        </div>
+        <div class="ctl">
+          <div class="ctl-top"><label for="detail">detalle del borde</label><output id="detail-v">9</output></div>
+          <input type="range" id="detail" min="3" max="15" step="2" value="9">
+        </div>
+
+        <div class="row">
+          <button class="btn primary" id="png" type="button">descargar png</button>
+          <button class="btn" id="svg" type="button">descargar svg</button>
+          <button class="btn" id="reset" type="button">reiniciar</button>
+        </div>
+
+        <div class="status" id="status" role="status" aria-live="polite"><i></i><span>comprobando…</span></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="sfoot">
+  <span>utils.antarquia.cl</span>
+  <a href="../index.html">volver al panal</a>
+</footer>
+
+<script src="../assets/tool.js"></script>
+<script src="../assets/vendor/qrcode.js"></script>
+<script src="../assets/vendor/jsQR.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  const KEY = 'antarquia.sigilo.v1';
+  const QUIET = 4;
+  const PAPER = '#fffdf6';
+  const INK = '#16130d';
+  const GOLD = 'rgba(255,200,0,.55)';
+
+  const $canvas = $('#qr');
+  const ctx = $canvas.getContext('2d');
+  const $status = $('#status');
+  const statusText = $status.querySelector('span');
+
+  const state = { shape: 'circulo', weight: 1, dot: 0.4, detail: 9 };
+  let matrix = null;
+  let scene = null;
+  let sceneTotal = 0;
+  let lastFile = 'sigilo-circulo.png';
+  let timer = null;
+
+  /* ---------- matriz QR ---------- */
+  function makeMatrix(text){
+    const qr = qrcode(0, 'H');
+    qr.addData(text);
+    qr.make();
+    const n = qr.getModuleCount();
+    const m = new Array(n);
+    for (let r = 0; r < n; r++){
+      const row = new Uint8Array(n);
+      for (let c = 0; c < n; c++) row[c] = qr.isDark(r, c) ? 1 : 0;
+      m[r] = row;
+    }
+    return m;
+  }
+
+  /* ---------- geometría del símbolo ---------- */
+  const RING_R = 0.365;
+
+  function glyph(shape){
+    const ring = shape !== 'a';
+    return ring
+      ? { ring: true, apex: [0.5, 0.285], left: [0.335, 0.72], right: [0.665, 0.72], bar: [0.418, 0.615, 0.582, 0.615] }
+      : { ring: false, apex: [0.5, 0.2], left: [0.285, 0.8], right: [0.715, 0.8], bar: [0.375, 0.655, 0.625, 0.655] };
+  }
+
+  function distSeg(px, py, ax, ay, bx, by){
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    let t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const x = ax + t * dx, y = ay + t * dy;
+    return Math.hypot(px - x, py - y);
+  }
+
+  function hitGlyph(x, y, g, weight, gs, gsw){
+    gs = gs || 1;
+    gsw = gsw || 1;
+    if (gs !== 1){
+      x = 0.5 + (x - 0.5) / gs;
+      y = 0.5 + (y - 0.5) / gs;
+    }
+    const sw = 0.048 * weight * gsw;
+    if (g.ring){
+      const d = Math.hypot(x - 0.5, y - 0.5);
+      if (Math.abs(d - RING_R) <= (0.038 * weight * gsw) / 2) return true;
+    }
+    if (distSeg(x, y, g.apex[0], g.apex[1], g.left[0], g.left[1]) <= sw / 2) return true;
+    if (distSeg(x, y, g.apex[0], g.apex[1], g.right[0], g.right[1]) <= sw / 2) return true;
+    if (distSeg(x, y, g.bar[0], g.bar[1], g.bar[2], g.bar[3]) <= sw / 2) return true;
+    return false;
+  }
+
+  function coverage(m, g, weight, detail, gs, gsw){
+    const n = m.length;
+    const cov = new Float32Array(n * n);
+    for (let r = 0; r < n; r++){
+      for (let c = 0; c < n; c++){
+        let hits = 0;
+        for (let j = 0; j < detail; j++){
+          const y = (r + (j + 0.5) / detail) / n;
+          for (let i = 0; i < detail; i++){
+            const x = (c + (i + 0.5) / detail) / n;
+            if (hitGlyph(x, y, g, weight, gs, gsw)) hits++;
+          }
+        }
+        cov[r * n + c] = hits / (detail * detail);
+      }
+    }
+    return cov;
+  }
+
+  /* ---------- zonas que no se tocan ---------- */
+  function isFinder(r, c, n){
+    return (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+  }
+  function isCorner(r, c, n){
+    return (r <= 8 && c <= 8) || (r <= 8 && c >= n - 9) || (r >= n - 9 && c <= 8);
+  }
+  function isTiming(r, c){
+    return r === 6 || c === 6;
+  }
+  function isAlignmentCenter(m, r, c){
+    const n = m.length;
+    if (r < 2 || c < 2 || r > n - 3 || c > n - 3) return false;
+    if (!m[r][c]) return false;
+    for (let dr = -2; dr <= 2; dr++){
+      for (let dc = -2; dc <= 2; dc++){
+        const ring = Math.max(Math.abs(dr), Math.abs(dc));
+        const want = ring === 1 ? 0 : 1;
+        if (m[r + dr][c + dc] !== want) return false;
+      }
+    }
+    return true;
+  }
+  function isProtected(m, r, c){
+    const n = m.length;
+    if (isCorner(r, c, n) || isTiming(r, c)) return true;
+    for (let dr = -2; dr <= 2; dr++){
+      for (let dc = -2; dc <= 2; dc++){
+        const rr = r + dr, cc = c + dc;
+        if (rr >= 0 && cc >= 0 && rr < n && cc < n && isAlignmentCenter(m, rr, cc)) return true;
+      }
+    }
+    return false;
+  }
+
+  /* ---------- escena (unidades de módulo) ---------- */
+  function buildScene(m, st){
+    const n = m.length;
+    const total = n + QUIET * 2;
+    const g = glyph(st.shape);
+    // la negativa recorta módulos: cuanto más grueso el trazo, más pequeño
+    // el glifo y más alto el umbral, para no comerse los datos del QR.
+    const neg = st.shape === 'negativa';
+    const gs = neg
+      ? (0.55 / Math.pow(Math.max(1, st.weight), 0.65)) * (n <= 25 ? 0.92 : 1)
+      : 1;
+    const gsw = neg ? 1.8 : 1;
+    const thr = neg ? Math.min(0.8, 0.4 + 0.1 * st.weight) : 0.45;
+    const cov = coverage(m, g, st.weight, st.detail, gs, gsw);
+    const dotR = st.dot;
+    const bgR = st.dot * 0.55;
+    const ops = [];
+    const struct = [];   // patrones de posición y módulos estructurales
+
+    ops.push({ t: 'rect', x: 0, y: 0, w: total, h: total, r: 0, fill: PAPER });
+
+    // patrones de posición: cuadrados redondeados, siempre legibles
+    const finders = [[QUIET, QUIET], [QUIET + n - 7, QUIET], [QUIET, QUIET + n - 7]];
+    for (const [fx, fy] of finders){
+      struct.push({ t: 'rect', x: fx, y: fy, w: 7, h: 7, r: 1.15, fill: INK });
+      struct.push({ t: 'rect', x: fx + 1, y: fy + 1, w: 5, h: 5, r: 0.8, fill: PAPER });
+      struct.push({ t: 'rect', x: fx + 2, y: fy + 2, w: 3, h: 3, r: 0.35, fill: INK });
+    }
+
+    for (let r = 0; r < n; r++){
+      for (let c = 0; c < n; c++){
+        if (isFinder(r, c, n)) continue;
+        const x = QUIET + c;
+        const y = QUIET + r;
+        const dark = !!m[r][c];
+
+        if (isProtected(m, r, c)){
+          if (dark) struct.push({ t: 'rect', x, y, w: 1, h: 1, r: 0.16, fill: INK });
+          continue;
+        }
+
+        if (neg){
+          if (cov[r * n + c] >= thr) continue;       // el símbolo se recorta en blanco
+          if (dark) ops.push({ t: 'circle', cx: x + 0.5, cy: y + 0.5, r: dotR, fill: INK });
+          else if (bgR > 0) ops.push({ t: 'circle', cx: x + 0.5, cy: y + 0.5, r: bgR, fill: GOLD });
+          continue;
+        }
+
+        // formas positivas: el símbolo se marca con módulos a tamaño completo,
+        // sin tocar los módulos claros (así el QR no pierde datos)
+        const cv = cov[r * n + c];
+        if (cv >= 0.45){
+          if (dark) ops.push({ t: 'rect', x, y, w: 1, h: 1, r: 0.04, fill: INK });
+          continue;
+        }
+        if (cv > 0.12){
+          if (dark){
+            const t = (cv - 0.12) / 0.33;
+            const rr = dotR + (0.5 - dotR) * t;
+            ops.push({ t: 'circle', cx: x + 0.5, cy: y + 0.5, r: rr, fill: INK });
+          }
+          continue;
+        }
+        if (dark) ops.push({ t: 'circle', cx: x + 0.5, cy: y + 0.5, r: dotR, fill: INK });
+        else if (bgR > 0) ops.push({ t: 'circle', cx: x + 0.5, cy: y + 0.5, r: bgR, fill: GOLD });
+      }
+    }
+    // marca de agua: el símbolo se imprime encima de los módulos, en oro.
+    // El oro tiñe sin borrar: los módulos oscuros siguen oscuros.
+    if (!neg){
+      const P = p => [QUIET + (0.5 + (p[0] - 0.5) * gs) * n, QUIET + (0.5 + (p[1] - 0.5) * gs) * n];
+      const [ax, ay] = P(g.apex);
+      const [lx, ly] = P(g.left);
+      const [rx, ry] = P(g.right);
+      const [bx1, by1] = P([g.bar[0], g.bar[1]]);
+      const [bx2, by2] = P([g.bar[2], g.bar[3]]);
+      ops.push({
+        t: 'glyph',
+        ring: g.ring,
+        cx: QUIET + 0.5 * n,
+        cy: QUIET + 0.5 * n,
+        r: RING_R * gs * n,
+        w: 0.048 * st.weight * gs * n,
+        ringW: 0.038 * st.weight * gs * n,
+        segs: [[ax, ay, lx, ly], [ax, ay, rx, ry], [bx1, by1, bx2, by2]],
+        color: neg ? PAPER : '#ffc800',
+        opacity: neg ? 1 : 0.45
+      });
+    }
+
+    ops.push(...struct);
+    return { ops, total };
+  }
+
+  /* ---------- pintado ---------- */
+  function drawScene(target, ops, total, px){
+    const g = target.getContext('2d');
+    target.width = px;
+    target.height = px;
+    const s = px / total;
+    g.fillStyle = PAPER;
+    g.fillRect(0, 0, px, px);
+    for (const op of ops){
+      g.fillStyle = op.fill;
+      if (op.t === 'rect'){
+        const x0 = Math.round(op.x * s), y0 = Math.round(op.y * s);
+        const x1 = Math.round((op.x + op.w) * s), y1 = Math.round((op.y + op.h) * s);
+        const w = x1 - x0, h = y1 - y0;
+        if (w <= 0 || h <= 0) continue;
+        const r = Math.min(op.r * s, w / 2, h / 2);
+        g.beginPath();
+        if (r > 0.6 && g.roundRect) g.roundRect(x0, y0, w, h, r);
+        else g.rect(x0, y0, w, h);
+        g.fill();
+      } else if (op.t === 'circle'){
+        g.beginPath();
+        g.arc(op.cx * s, op.cy * s, Math.max(0.5, op.r * s), 0, Math.PI * 2);
+        g.fill();
+      } else if (op.t === 'glyph'){
+        g.globalAlpha = op.opacity;
+        g.strokeStyle = op.color;
+        g.lineCap = 'round';
+        g.lineWidth = Math.max(1, op.w * s);
+        g.beginPath();
+        for (const seg of op.segs){
+          g.moveTo(seg[0] * s, seg[1] * s);
+          g.lineTo(seg[2] * s, seg[3] * s);
+        }
+        g.stroke();
+        if (op.ring){
+          g.lineWidth = Math.max(1, op.ringW * s);
+          g.beginPath();
+          g.arc(op.cx * s, op.cy * s, op.r * s, 0, Math.PI * 2);
+          g.stroke();
+        }
+        g.globalAlpha = 1;
+      }
+    }
+  }
+
+  function sceneToSVG(ops, total){
+    const f = v => (Math.round(v * 1000) / 1000);
+    const parts = [
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + total + ' ' + total +
+      '" width="1024" height="1024" shape-rendering="geometricPrecision">'
+    ];
+    for (const op of ops){
+      if (op.t === 'rect'){
+        parts.push('<rect x="' + f(op.x) + '" y="' + f(op.y) + '" width="' + f(op.w) +
+                   '" height="' + f(op.h) + '"' + (op.r ? ' rx="' + f(op.r) + '"' : '') +
+                   ' fill="' + op.fill + '"/>');
+      } else if (op.t === 'circle'){
+        parts.push('<circle cx="' + f(op.cx) + '" cy="' + f(op.cy) + '" r="' + f(op.r) +
+                   '" fill="' + op.fill + '"/>');
+      } else if (op.t === 'glyph'){
+        const d = op.segs.map(sg => 'M' + f(sg[0]) + ' ' + f(sg[1]) + 'L' + f(sg[2]) + ' ' + f(sg[3])).join('');
+        parts.push('<path d="' + d + '" fill="none" stroke="' + op.color +
+                   '" stroke-opacity="' + op.opacity + '" stroke-width="' + f(op.w) +
+                   '" stroke-linecap="round"/>');
+        if (op.ring){
+          parts.push('<circle cx="' + f(op.cx) + '" cy="' + f(op.cy) + '" r="' + f(op.r) +
+                     '" fill="none" stroke="' + op.color + '" stroke-opacity="' + op.opacity +
+                     '" stroke-width="' + f(op.ringW) + '"/>');
+        }
+      }
+    }
+    parts.push('</svg>');
+    return parts.join('');
+  }
+
+  /* ---------- verificación ---------- */
+  const vBig = document.createElement('canvas');
+  const vSmall = document.createElement('canvas');
+  vBig.getContext('2d', { willReadFrequently: true });
+  vSmall.getContext('2d', { willReadFrequently: true });
+
+  function readable(canvas){
+    const g = canvas.getContext('2d', { willReadFrequently: true });
+    const img = g.getImageData(0, 0, canvas.width, canvas.height);
+    try {
+      return !!jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+    } catch (e) { return false; }
+  }
+
+  function setStatus(kind, msg){
+    $status.className = 'status' + (kind ? ' ' + kind : '');
+    statusText.textContent = msg;
+  }
+
+  /* ---------- flujo ---------- */
+  function update(){
+    const text = $('#content').value;
+    if (!text.trim()){
+      setStatus('bad', 'escribe algo para generar el QR');
+      return;
+    }
+    try {
+      matrix = makeMatrix(text);
+    } catch (e) {
+      setStatus('bad', 'el texto no cabe en un QR de nivel H');
+      return;
+    }
+
+    scene = buildScene(matrix, state);
+    sceneTotal = scene.total;
+    drawScene($canvas, scene.ops, sceneTotal, 960);
+
+    const version = (matrix.length - 17) / 4;
+    $('#vmeta').textContent = 'nivel H · ' + matrix.length + ' módulos · v' + version;
+    lastFile = 'sigilo-' + state.shape + '-' + slug(text) + '.png';
+    $('#fname').innerHTML = '<b>' + lastFile.replace(/\.png$/, '') + '</b>.png';
+
+    drawScene(vBig, scene.ops, sceneTotal, 1200);
+    drawScene(vSmall, scene.ops, sceneTotal, 320);
+    const okBig = readable(vBig);
+    const okSmall = readable(vSmall);
+
+    if (okBig && okSmall) setStatus('ok', 'legible ✓ · verificado a 1200 y 320 px');
+    else if (okBig) setStatus('warn', 'legible en grande · a 320 px falla: sube los puntos o el grosor');
+    else if (okSmall) setStatus('warn', 'legible en pequeño · a 1200 px falla: baja los puntos');
+    else setStatus('bad', 'no se pudo leer · prueba otra forma o sube los puntos');
+
+    saveState(text);
+  }
+
+  function slug(text){
+    return (text || 'qr').replace(/^https?:\/\//i, '')
+      .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || 'qr';
+  }
+
+  function schedule(){
+    clearTimeout(timer);
+    timer = setTimeout(update, 90);
+  }
+
+  function saveState(text){
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ text, ...state }));
+    } catch (e) {}
+  }
+  function loadState(){
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (!s) return;
+      if (typeof s.text === 'string' && s.text.trim()) $('#content').value = s.text;
+      if (['circulo', 'a', 'negativa'].includes(s.shape)) state.shape = s.shape;
+      if (typeof s.weight === 'number') state.weight = Math.min(2.2, Math.max(0.4, s.weight));
+      if (typeof s.dot === 'number') state.dot = Math.min(0.5, Math.max(0.28, s.dot));
+      if (typeof s.detail === 'number') state.detail = Math.min(15, Math.max(3, s.detail));
+    } catch (e) {}
+  }
+
+  function syncControls(){
+    $('#weight').value = state.weight;
+    $('#dot').value = state.dot;
+    $('#detail').value = state.detail;
+    $('#weight-v').textContent = Number(state.weight).toFixed(1);
+    $('#dot-v').textContent = Number(state.dot).toFixed(2);
+    $('#detail-v').textContent = state.detail;
+    $$('.seg button').forEach(b => b.classList.toggle('on', b.dataset.shape === state.shape));
+  }
+
+  /* ---------- descargas ---------- */
+  function downloadBlob(name, blob){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  $('#png').addEventListener('click', () => {
+    if (!scene) return toast('nada que descargar');
+    const out = document.createElement('canvas');
+    drawScene(out, scene.ops, sceneTotal, 1200);
+    out.toBlob(blob => {
+      if (!blob) return toast('no se pudo exportar');
+      downloadBlob(lastFile, blob);
+      toast('png descargado');
+    }, 'image/png');
+  });
+
+  $('#svg').addEventListener('click', () => {
+    if (!scene) return toast('nada que descargar');
+    download(lastFile.replace(/\.png$/, '.svg'), sceneToSVG(scene.ops, sceneTotal), 'image/svg+xml');
+    toast('svg descargado');
+  });
+
+  $('#reset').addEventListener('click', () => {
+    state.shape = 'circulo';
+    state.weight = 1;
+    state.dot = 0.4;
+    state.detail = 9;
+    syncControls();
+    update();
+    toast('ajustes reiniciados');
+  });
+
+  /* ---------- eventos ---------- */
+  $('#content').addEventListener('input', schedule);
+  $$('.seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.shape = btn.dataset.shape;
+      syncControls();
+      update();
+    });
+  });
+  $('#weight').addEventListener('input', e => {
+    state.weight = Number(e.target.value);
+    $('#weight-v').textContent = state.weight.toFixed(1);
+    schedule();
+  });
+  $('#dot').addEventListener('input', e => {
+    state.dot = Number(e.target.value);
+    $('#dot-v').textContent = state.dot.toFixed(2);
+    schedule();
+  });
+  $('#detail').addEventListener('input', e => {
+    state.detail = Number(e.target.value);
+    $('#detail-v').textContent = state.detail;
+    schedule();
+  });
+
+
+
+  loadState();
+  syncControls();
+  update();
+})();
+</script>
+</body>
+</html>

@@ -16,15 +16,21 @@ Un panal de hexágonos. Cada celda es una herramienta.
 | URL | Encode / decode de URLs + análisis de partes y query params |
 | Colores | HEX ↔ RGB ↔ HSL + contraste WCAG |
 | UUID | Genera v4 (aleatorio) y v7 (ordenable por tiempo) |
+| Paleta | Constructor de paletas: añade, aleatorio, extrae colores de un texto, guarda en `localStorage` y exporta CSS/JSON |
+| Sigilo | QR nivel H con la silueta Ⓐ (círculo, A sola o negativa), verificado con jsQR y descarga PNG/SVG |
 
 ## Estructura
 
 ```
 .
-├── index.html          # el panal
+├── index.html            # el panal
 ├── assets/
-│   ├── tool.css        # estilos compartidos de las utils
-│   └── tool.js         # helpers: toast, copiar, descargar
+│   ├── tool.css          # estilos compartidos de las utils
+│   ├── tool.js           # helpers: toast, copiar, descargar
+│   ├── colors-data.js    # Tailwind v3 + nombres CSS (para Paleta)
+│   └── vendor/
+│       ├── qrcode.js     # qrcode-generator 1.4.4 (MIT)
+│       └── jsQR.js       # jsQR 1.4.0 (Apache-2.0)
 └── utils/
     ├── base64.html
     ├── hash.html
@@ -33,10 +39,14 @@ Un panal de hexágonos. Cada celda es una herramienta.
     ├── timestamp.html
     ├── url.html
     ├── colores.html
-    └── uuid.html
+    ├── uuid.html
+    ├── paleta.html       # taller de color (diseño propio)
+    └── sigilo.html       # sello QR Ⓐ (diseño propio)
 ```
 
-Sin build, sin dependencias, sin frameworks. HTML + CSS + JS puro.
+Sin build, sin dependencias externas en runtime, sin frameworks. HTML + CSS + JS puro.
+
+Las dos últimas tienen diseño propio (no usan `tool.css`, solo `tool.js`): **Paleta** es un taller de impresión en papel y **Sigilo** una mesa de esténcil.
 
 ## Agregar una util nueva
 
