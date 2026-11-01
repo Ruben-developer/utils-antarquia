@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Utils — Antarquía</title>
+<meta name="description" content="Caja de herramientas de Antarquía: utilidades rápidas para el día a día. Base64, hash, JSON, contraseñas y más.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 92,27 92,73 50,96 8,73 8,27' fill='%23ffc800'/%3E%3Cpolygon points='50,14 84,33 84,67 50,86 16,67 16,33' fill='%230a0a0a'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --panel:#121212;
+    --yellow:#ffc800;
+    --yellow-soft:#ffdd55;
+    --line:#2b2300;
+    --text:#f4f1e6;
+    --muted:#8b8672;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(ellipse at 50% 40%, #1a1500 0%, var(--bg) 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    overflow-x:hidden;
+  }
+
+  header{
+    text-align:center;
+    padding:48px 16px 8px;
+  }
+  .tag{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px;
+    letter-spacing:.35em;
+    text-transform:uppercase;
+    color:var(--yellow);
+    opacity:.85;
+  }
+  h1{
+    font-size:clamp(52px,10vw,96px);
+    font-weight:900;
+    letter-spacing:-.04em;
+    line-height:1;
+    margin-top:10px;
+  }
+  h1 span{color:var(--yellow)}
+  .sub{
+    margin-top:12px;
+    color:var(--muted);
+    font-size:15px;
+  }
+
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:8px 8px 0}
+  #wrap{position:relative;width:100%;max-width:1100px}
+
+  .cell{
+    position:absolute;
+    transition:filter .25s ease, transform .25s ease;
+    opacity:0;
+    animation:pop .5s cubic-bezier(.2,.9,.3,1.3) forwards;
+  }
+  @keyframes pop{
+    from{opacity:0;transform:scale(.6)}
+    to{opacity:var(--o,1);transform:scale(1)}
+  }
+
+  .hex{
+    position:absolute;inset:0;
+    display:block;
+    background:var(--yellow);
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+    text-decoration:none;
+    color:inherit;
+    outline:none;
+  }
+  .hex .in{
+    position:absolute;inset:3px;
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+    background:var(--panel);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:6px;
+    padding:0 12px;
+    text-align:center;
+    transition:background .2s ease,color .2s ease;
+  }
+  .ico{font-size:clamp(26px,3.6vw,38px);line-height:1;transition:transform .25s ease}
+  .name{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--yellow);
+    transition:color .2s ease;
+  }
+
+  /* real util hover / focus */
+  .cell.real:hover,.cell.real:focus-within{
+    z-index:5;
+    transform:scale(1.12);
+    filter:drop-shadow(0 0 18px rgba(255,200,0,.55));
+  }
+  .cell.real:hover .in,.cell.real:focus-within .in{background:var(--yellow)}
+  .cell.real:hover .name,.cell.real:focus-within .name{color:#000}
+  .cell.real:hover .ico{transform:scale(1.18) rotate(-6deg)}
+
+  /* ghost cells: panal vacío */
+  .cell.ghost .hex{background:var(--line)}
+  .cell.ghost .in{background:#0d0d0d}
+  .cell.ghost{pointer-events:none}
+
+  footer{
+    text-align:center;
+    padding:6px 16px 30px;
+    min-height:70px;
+  }
+  #info{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:13px;
+    color:var(--muted);
+    transition:color .2s ease;
+  }
+  #info.on{color:var(--yellow-soft)}
+  #count{
+    margin-top:6px;
+    font-size:11px;
+    letter-spacing:.25em;
+    text-transform:uppercase;
+    color:#4a4530;
+  }
+  #count a{color:#4a4530;text-decoration:none}
+  #count a:hover{color:var(--yellow)}
+
+  @media (prefers-reduced-motion:reduce){
+    .cell{animation:none;opacity:var(--o,1)}
+    .cell,.ico{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">// antarquía · caja de herramientas</div>
+  <h1>Ut<span>ils</span></h1>
+  <p class="sub">Herramientas breves, un hexágono a la vez.</p>
+</header>
+
+<main>
+  <div id="wrap" aria-label="Listado de utils"></div>
+</main>
+
+<footer>
+  <div id="info">pasa el cursor sobre una celda</div>
+  <div id="count"></div>
+</footer>
+
+<script>
+/* ============================================================
+   AGREGA TUS UTILS AQUÍ
+   Cada uno es una celda nueva del panal.
+   - name: texto corto (se muestra en mayúsculas)
+   - icon: emoji o carácter
+   - href: ruta al html de la util (ej: "utils/base64.html")
+   - desc: línea que aparece abajo al pasar el cursor
+   ============================================================ */
+const UTILS = [
+  { name:"Base64",    icon:"🔤", href:"utils/base64.html",    desc:"Codifica y decodifica texto en Base64" },
+  { name:"Hash",      icon:"#️⃣", href:"utils/hash.html",      desc:"MD5, SHA-1, SHA-256, SHA-512 de un texto" },
+  { name:"JSON",      icon:"{ }", href:"utils/json.html",      desc:"Formatea, minifica y valida JSON" },
+  { name:"Passwords", icon:"🔑", href:"utils/passwords.html", desc:"Generador de contraseñas seguras" },
+  { name:"Timestamp", icon:"⏱️", href:"utils/timestamp.html", desc:"Epoch ↔ fecha legible" },
+  { name:"URL",       icon:"🔗", href:"utils/url.html",       desc:"Encode / decode de URLs" },
+  { name:"Colores",   icon:"🎨", href:"utils/colores.html",   desc:"HEX ↔ RGB ↔ HSL" },
+  { name:"UUID",      icon:"🆔", href:"utils/uuid.html",      desc:"Genera identificadores únicos" }
+];
+
+const wrap = document.getElementById('wrap');
+const info = document.getElementById('info');
+const count = document.getElementById('count');
+const GAP = 6;
+
+function render(){
+  wrap.innerHTML = '';
+  const W = wrap.clientWidth || window.innerWidth;
+
+  const w = W < 560 ? 96 : (W < 900 ? 124 : 150);
+  const h = Math.round(w * 1.1547);
+  const stepX = w + GAP;
+  const stepY = h * 0.75 + GAP * 0.87;
+
+  const cols = Math.max(3, Math.floor((W - stepX/2) / stepX));
+  let rows = W < 560 ? 9 : 7;
+  if (rows % 2 === 0) rows++;
+
+  const totalW = cols * stepX - GAP + stepX/2;
+  const x0 = (W - totalW) / 2;
+  const totalH = (rows - 1) * stepY + h;
+  wrap.style.height = totalH + 'px';
+
+  const cx = x0 + totalW / 2;
+  const cy = totalH / 2;
+
+  const cells = [];
+  for (let r = 0; r < rows; r++){
+    for (let c = 0; c < cols; c++){
+      const x = x0 + c * stepX + (r % 2 ? stepX/2 : 0);
+      const y = r * stepY;
+      const d = Math.hypot(x + w/2 - cx, y + h/2 - cy);
+      cells.push({x,y,d});
+    }
+  }
+  cells.sort((a,b) => a.d - b.d);
+  const maxD = cells[cells.length - 1].d;
+
+  cells.forEach((cell, i) => {
+    const real = i < UTILS.length ? UTILS[i] : null;
+    const el = document.createElement('div');
+    el.className = 'cell ' + (real ? 'real' : 'ghost');
+    el.style.cssText =
+      `left:${cell.x}px;top:${cell.y}px;width:${w}px;height:${h}px;` +
+      `animation-delay:${Math.min(i * 35, 900)}ms;`;
+
+    if (real){
+      el.innerHTML =
+        `<a class="hex" href="${real.href}" aria-label="${real.name}">
+           <span class="in"><span class="ico">${real.icon}</span><span class="name">${real.name}</span></span>
+         </a>`;
+      const show = () => { info.textContent = real.desc; info.classList.add('on'); };
+      const hide = () => { info.textContent = 'pasa el cursor sobre una celda'; info.classList.remove('on'); };
+      el.addEventListener('mouseenter', show);
+      el.addEventListener('mouseleave', hide);
+      el.querySelector('a').addEventListener('focus', show);
+      el.querySelector('a').addEventListener('blur', hide);
+    } else {
+      // las celdas vacías se desvanecen hacia los bordes
+      const o = Math.max(0, 1 - cell.d / maxD);
+      const op = Math.pow(o, 1.4) * 0.9;
+      if (op < 0.04) return;
+      el.style.setProperty('--o', op.toFixed(3));
+      el.innerHTML = `<span class="hex"><span class="in"></span></span>`;
+    }
+    wrap.appendChild(el);
+  });
+
+  count.textContent = UTILS.length + (UTILS.length === 1 ? ' util' : ' utils');
+}
+
+let t;
+window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(render, 150); });
+render();
+</script>
+</body>
+</html>

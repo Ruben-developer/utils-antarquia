@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>URL — Utils Antarquía</title>
+<meta name="description" content="Codifica, decodifica y analiza URLs y query strings.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 92,27 92,73 50,96 8,73 8,27' fill='%23ffc800'/%3E%3Cpolygon points='50,14 84,33 84,67 50,86 16,67 16,33' fill='%230a0a0a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../assets/tool.css">
+<style>
+  .params{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+  .params td{padding:8px 10px;border-bottom:1px dashed #1d1a0f;vertical-align:top;word-break:break-all}
+  .params td:first-child{color:var(--yellow);width:34%}
+  .params td:last-child{color:var(--muted)}
+  .params tr:last-child td{border-bottom:0}
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <a class="back" href="../index.html">← panal</a>
+  <div class="brand"><b>utils</b> / antarquía</div>
+</nav>
+
+<main>
+  <div class="head">
+    <div class="hexico"><span>🔗</span></div>
+    <div>
+      <h1>URL</h1>
+      <p class="sub">encode · decode · analizar</p>
+    </div>
+  </div>
+
+  <section class="card">
+    <label class="lbl" for="input">Entrada</label>
+    <textarea id="input" spellcheck="false" placeholder="https://ejemplo.cl/buscar?q=hola mundo&lang=es"></textarea>
+    <div class="row">
+      <button class="primary" id="btn-comp" data-run>encode componente</button>
+      <button id="btn-uri">encode URI</button>
+      <button id="btn-dec">decodificar</button>
+      <button class="ghost" id="btn-swap">↕ swap</button>
+    </div>
+    <p class="hint">Componente escapa <b>todos</b> los caracteres reservados; URI completa deja intactos <b>:/?#&amp;=</b>.</p>
+  </section>
+
+  <section class="card">
+    <label class="lbl" for="output">Resultado</label>
+    <div class="out" id="output"></div>
+    <div class="row">
+      <button data-copy="#output">copiar</button>
+      <button class="ghost" id="btn-clear">limpiar</button>
+    </div>
+    <p class="hint" id="status"></p>
+  </section>
+
+  <section class="card">
+    <h2>Análisis de la URL</h2>
+    <table class="params" id="analysis">
+      <tr><td colspan="2" style="color:#4a4530">Pega una URL completa para ver sus partes y parámetros.</td></tr>
+    </table>
+  </section>
+</main>
+
+<footer><a href="../index.html">utils.antarquia.cl</a></footer>
+
+<script src="../assets/tool.js"></script>
+<script>
+  const input  = $('#input');
+  const output = $('#output');
+  const status = $('#status');
+
+  function setOut(text, isErr = false) {
+    output.textContent = text;
+    output.classList.toggle('err', isErr);
+  }
+
+  function analyze() {
+    const table = $('#analysis');
+    const raw = input.value.trim();
+    table.innerHTML = '';
+    if (!raw) {
+      table.innerHTML = '<tr><td colspan="2" style="color:#4a4530">Pega una URL completa para ver sus partes y parámetros.</td></tr>';
+      return;
+    }
+    let url;
+    try {
+      url = new URL(raw);
+    } catch {
+      table.innerHTML = '<tr><td colspan="2" style="color:#6b6654">No es una URL absoluta válida (necesita esquema, ej. https://).</td></tr>';
+      return;
+    }
+
+    const rows = [
+      ['protocolo', url.protocol.replace(':', '')],
+      ['host', url.host],
+      ['path', url.pathname],
+      ['hash', url.hash || '—']
+    ];
+    for (const [k, v] of rows) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${k}</td><td>${escapeHtml(v)}</td>`;
+      table.appendChild(tr);
+    }
+
+    const params = [...url.searchParams.entries()];
+    if (params.length) {
+      params.forEach(([k, v]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>?${escapeHtml(k)}</td><td>${escapeHtml(v)}</td>`;
+        table.appendChild(tr);
+      });
+    } else {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>params</td><td>—</td>';
+      table.appendChild(tr);
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function run(fn, label) {
+    try {
+      setOut(fn(input.value));
+      status.textContent = label;
+      status.style.color = '';
+    } catch (e) {
+      setOut('✗ ' + e.message, true);
+      status.textContent = 'Entrada inválida para esta operación.';
+      status.style.color = '#ff6b6b';
+    }
+    analyze();
+  }
+
+  $('#btn-comp').addEventListener('click', () => run(encodeURIComponent, 'encodeURIComponent aplicado'));
+  $('#btn-uri').addEventListener('click', () => run(encodeURI, 'encodeURI aplicado'));
+  $('#btn-dec').addEventListener('click', () => run(decodeURIComponent, 'decodeURIComponent aplicado'));
+  $('#btn-swap').addEventListener('click', () => {
+    if (!output.textContent || output.classList.contains('err')) return;
+    input.value = output.textContent;
+    setOut('');
+    analyze();
+    input.focus();
+  });
+  $('#btn-clear').addEventListener('click', () => {
+    input.value = '';
+    setOut('');
+    status.textContent = '';
+    analyze();
+    input.focus();
+  });
+
+  input.addEventListener('input', analyze);
+  analyze();
+</script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colores — Utils Antarquía</title>
+<meta name="description" content="Convierte entre HEX, RGB y HSL y revisa el contraste WCAG.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 92,27 92,73 50,96 8,73 8,27' fill='%23ffc800'/%3E%3Cpolygon points='50,14 84,33 84,67 50,86 16,67 16,33' fill='%230a0a0a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../assets/tool.css">
+<style>
+  .swatch{
+    height:150px;
+    border-radius:12px;
+    border:1px solid #2a2411;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    padding:14px 16px;
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    transition:background .2s ease,color .2s ease;
+  }
+  .vals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  .valbox{
+    background:#0b0b0b;border:1px solid #262112;border-radius:10px;padding:12px;
+    font-family:var(--mono);cursor:pointer;transition:border-color .18s ease,background .18s ease;
+  }
+  .valbox:hover{border-color:var(--yellow);background:#141208}
+  .valbox .k{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#7d775f;display:block;margin-bottom:6px}
+  .valbox .v{font-size:13px;color:var(--yellow-soft);word-break:break-all}
+  .swatchrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  input[type=color]{width:52px;height:44px;padding:0;border:1px solid #2a2411;border-radius:10px;background:#0b0b0b;cursor:pointer}
+  .contrast{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  .cbox{border:1px solid #262112;border-radius:10px;padding:12px 14px;font-family:var(--mono);font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .badge{font-size:10px;letter-spacing:.1em;padding:4px 9px;border-radius:999px;text-transform:uppercase;font-weight:700}
+  .aa{background:#1e3a14;color:#9be37a}
+  .no{background:#3a1414;color:#ff6b6b}
+  @media (max-width:620px){.vals{grid-template-columns:1fr}.contrast{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <a class="back" href="../index.html">← panal</a>
+  <div class="brand"><b>utils</b> / antarquía</div>
+</nav>
+
+<main>
+  <div class="head">
+    <div class="hexico"><span>🎨</span></div>
+    <div>
+      <h1>Colores</h1>
+      <p class="sub">HEX ↔ RGB ↔ HSL · contraste WCAG</p>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="swatchrow">
+      <input type="color" id="picker" value="#ffc800" aria-label="Selector de color">
+      <input type="text" id="hex" value="#ffc800" spellcheck="false" style="flex:1;min-width:140px" aria-label="Código HEX">
+      <button class="ghost" id="btn-random">aleatorio</button>
+    </div>
+    <div class="swatch" id="swatch">#FFC800</div>
+    <div class="vals">
+      <div class="valbox" data-copy-val="v-hex"><span class="k">HEX</span><span class="v" id="v-hex">#FFC800</span></div>
+      <div class="valbox" data-copy-val="v-rgb"><span class="k">RGB</span><span class="v" id="v-rgb">rgb(255, 200, 0)</span></div>
+      <div class="valbox" data-copy-val="v-hsl"><span class="k">HSL</span><span class="v" id="v-hsl">hsl(47, 100%, 50%)</span></div>
+    </div>
+    <p class="hint">Haz clic en cualquier valor para copiarlo.</p>
+  </section>
+
+  <section class="card">
+    <h2>Contraste</h2>
+    <div class="contrast">
+      <div class="cbox"><span>texto negro</span><span id="c-black" class="badge no">—</span></div>
+      <div class="cbox"><span>texto blanco</span><span id="c-white" class="badge no">—</span></div>
+    </div>
+    <p class="hint">Ratio de contraste WCAG. <b>AA</b> ≥ 4.5:1 para texto normal · <b>AAA</b> ≥ 7:1</p>
+  </section>
+</main>
+
+<footer><a href="../index.html">utils.antarquia.cl</a></footer>
+
+<script src="../assets/tool.js"></script>
+<script>
+  const $hex = $('#hex'), $picker = $('#picker'), $swatch = $('#swatch');
+
+  function parseHex(str) {
+    let s = str.trim().replace(/^#/, '');
+    if (/^[0-9a-f]{3}$/i.test(s)) s = s.split('').map(c => c + c).join('');
+    if (!/^[0-9a-f]{6}$/i.test(s)) return null;
+    return {
+      r: parseInt(s.slice(0, 2), 16),
+      g: parseInt(s.slice(2, 4), 16),
+      b: parseInt(s.slice(4, 6), 16)
+    };
+  }
+
+  function toHex({ r, g, b }) {
+    return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+
+  function toHsl({ r, g, b }) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    let h = 0, s = 0;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0));
+      else if (max === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h *= 60;
+    }
+    return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+  }
+
+  const luminance = ({ r, g, b }) => {
+    const [R, G, B] = [r, g, b].map(v => {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+  };
+
+  const ratio = (a, b) => {
+    const [l1, l2] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (l1 + 0.05) / (l2 + 0.05);
+  };
+
+  function badge(el, value) {
+    el.textContent = value.toFixed(2) + ':1';
+    el.className = 'badge ' + (value >= 4.5 ? 'aa' : 'no');
+    el.title = value >= 7 ? 'AAA' : value >= 4.5 ? 'AA' : 'insuficiente';
+  }
+
+  function render() {
+    const rgb = parseHex($hex.value);
+    if (!rgb) {
+      $hex.style.borderColor = '#4a1414';
+      return;
+    }
+    $hex.style.borderColor = '';
+    const hex = toHex(rgb);
+    const hsl = toHsl(rgb);
+
+    $picker.value = hex.toLowerCase();
+    $swatch.style.background = hex;
+    $swatch.style.color = luminance(rgb) > 0.4 ? '#000' : '#fff';
+    $swatch.textContent = hex;
+
+    $('#v-hex').textContent = hex;
+    $('#v-rgb').textContent = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+    $('#v-hsl').textContent = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+
+    badge($('#c-black'), ratio(rgb, { r: 0, g: 0, b: 0 }));
+    badge($('#c-white'), ratio(rgb, { r: 255, g: 255, b: 255 }));
+  }
+
+  $hex.addEventListener('input', render);
+  $picker.addEventListener('input', () => { $hex.value = $picker.value; render(); });
+  $('#btn-random').addEventListener('click', () => {
+    const rnd = () => Math.floor(Math.random() * 256);
+    $hex.value = toHex({ r: rnd(), g: rnd(), b: rnd() });
+    render();
+  });
+
+  $$('[data-copy-val]').forEach(el => {
+    el.addEventListener('click', () => copyText($('#' + el.dataset.copyVal).textContent));
+  });
+
+  render();
+</script>
+</body>
+</html>
