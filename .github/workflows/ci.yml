@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calidad:
+    name: Calidad y seguridad
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Configurar Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+
+      - name: Validar HTML
+        run: npx --yes html-validate@9 "*.html" "utils/*.html"
+
+      - name: Comprobar que el panal enlaza a archivos existentes
+        run: |
+          node -e '
+          const fs = require("fs");
+          const html = fs.readFileSync("index.html", "utf8");
+          const hrefs = [...html.matchAll(/href:"([^"]+\.html)"/g)].map(m => m[1]);
+          const faltan = hrefs.filter(h => !fs.existsSync(h));
+          if (faltan.length) {
+            console.error("Enlaces rotos en index.html: " + faltan.join(", "));
+            process.exit(1);
+          }
+          console.log("OK: " + hrefs.length + " utils enlazadas y presentes");
+          '
+
+      - name: Escanear secretos
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
