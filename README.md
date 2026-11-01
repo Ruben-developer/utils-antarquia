@@ -16,8 +16,8 @@ Un panal de hexágonos. Cada celda es una herramienta.
 | URL | Encode / decode de URLs + análisis de partes y query params |
 | Colores | HEX ↔ RGB ↔ HSL + contraste WCAG |
 | UUID | Genera v4 (aleatorio) y v7 (ordenable por tiempo) |
-| Paleta | Constructor de paletas: añade, aleatorio, extrae colores de un texto, guarda en `localStorage` y exporta CSS/JSON |
-| Sigilo | QR nivel H con la silueta Ⓐ (círculo, A sola o negativa), verificado con jsQR y descarga PNG/SVG |
+| Paleta | Constructor de paletas con 4 estéticas (serigrafía, galería, collage/riso, acuarela): añade, aleatorio, extrae colores de un texto, guarda en `localStorage` y exporta CSS/JSON |
+| QR Acrata | QR nivel H con la silueta Ⓐ (círculo, A sola o negativa) estampada en los módulos, verificado con jsQR y descarga PNG/SVG |
 
 ## Estructura
 
@@ -41,12 +41,12 @@ Un panal de hexágonos. Cada celda es una herramienta.
     ├── colores.html
     ├── uuid.html
     ├── paleta.html       # taller de color (diseño propio)
-    └── sigilo.html       # sello QR Ⓐ (diseño propio)
+    └── qr-acrata.html    # QR con la Ⓐ en los módulos (diseño propio)
 ```
 
 Sin build, sin dependencias externas en runtime, sin frameworks. HTML + CSS + JS puro.
 
-Las dos últimas tienen diseño propio (no usan `tool.css`, solo `tool.js`): **Paleta** es un taller de impresión en papel y **Sigilo** una mesa de esténcil.
+Las dos últimas tienen diseño propio (no usan `tool.css`, solo `tool.js`): **Paleta** es un taller de color con cuatro estéticas intercambiables desde la barra superior (serigrafía, galería contemporánea, collage/riso y acuarela) y **QR Acrata** una mesa de esténcil.
 
 ## Agregar una util nueva
 

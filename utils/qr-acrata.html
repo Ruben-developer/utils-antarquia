@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sigilo — Utils Antarquía</title>
+<title>QR Acrata — Utils Antarquía</title>
 <meta name="description" content="Genera un QR con la silueta Ⓐ de Antarquía. Nivel de corrección H, tres formas, descarga PNG y SVG, verificado en el navegador.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 92,27 92,73 50,96 8,73 8,27' fill='%23ffc800'/%3E%3Cpolygon points='50,14 84,33 84,67 50,86 16,67 16,33' fill='%230a0a0a'/%3E%3C/svg%3E">
 <style>
@@ -258,9 +258,9 @@
 
 <main class="sw">
   <header class="shead">
-    <div class="smeta"><span>ficha 10 · sello de tinta</span><span>qr nivel h · corrección alta</span></div>
-    <h1>sigilo<sup>Ⓐ</sup></h1>
-    <p class="slead">Un QR que lleva la <b>Ⓐ</b> grabada. Elige la forma, ajusta el grosor y los puntos, y llévate el sello en <code>png</code> o <code>svg</code>. Se verifica solo, aquí mismo.</p>
+    <div class="smeta"><span>ficha 10 · código de marca</span><span>qr nivel h · corrección alta</span></div>
+    <h1>qr acrata<sup>Ⓐ</sup></h1>
+    <p class="slead">Un QR que lleva la <b>Ⓐ</b> estampada en sus propios módulos. Elige la forma, ajusta el grosor y los puntos, y llévate el código en <code>png</code> o <code>svg</code>. Se verifica solo, aquí mismo.</p>
   </header>
 
   <div class="layout">
@@ -269,11 +269,11 @@
       <div class="paper">
         <canvas id="qr" width="960" height="960" role="img" aria-label="Código QR generado con la silueta de Antarquía"></canvas>
         <div class="spec-cap">
-          <span id="fname"><b>sigilo</b>-circulo.png</span>
+          <span id="fname"><b>qracrata</b>-circulo.png</span>
           <span id="vmeta">nivel H · 0 módulos</span>
         </div>
       </div>
-      <p class="stage-note">el símbolo se imprime con tinta y módulos: sin imágenes externas, sin servicios.</p>
+      <p class="stage-note">el símbolo son los propios módulos: sin imágenes encima, sin servicios.</p>
     </section>
 
     <div class="stack">
@@ -281,7 +281,7 @@
         <div class="ph"><span>01 · contenido</span><b>texto / url</b></div>
         <label class="fl" for="content">lo que guarda el QR</label>
         <textarea id="content" spellcheck="false" placeholder="https://utils.antarquia.cl">https://utils.antarquia.cl</textarea>
-        <p class="hint">Se usa corrección de errores <b>H</b> (≈30% recuperable): por eso aguanta la marca encima.</p>
+        <p class="hint">Se usa corrección de errores <b>H</b> (≈30% recuperable): por eso el glifo puede ocupar el centro.</p>
       </section>
 
       <section class="panel">
@@ -329,7 +329,8 @@
 (function(){
   'use strict';
 
-  const KEY = 'antarquia.sigilo.v1';
+  const KEY = 'antarquia.qracrata.v1';
+  const OLD_KEY = 'antarquia.sigilo.v1';
   const QUIET = 4;
   const PAPER = '#fffdf6';
   const INK = '#16130d';
@@ -344,7 +345,7 @@
   let matrix = null;
   let scene = null;
   let sceneTotal = 0;
-  let lastFile = 'sigilo-circulo.png';
+  let lastFile = 'qracrata-circulo.png';
   let timer = null;
 
   /* ---------- matriz QR ---------- */
@@ -461,11 +462,15 @@
     // la negativa recorta módulos: cuanto más grueso el trazo, más pequeño
     // el glifo y más alto el umbral, para no comerse los datos del QR.
     const neg = st.shape === 'negativa';
+    const w = Math.max(1, st.weight);
+    // las formas positivas estampan el glifo con módulos oscuros;
+    // la negativa los recorta en blanco. Ambas se encogen al engrosar
+    // el trazo para no comerse los datos del QR.
     const gs = neg
-      ? (0.55 / Math.pow(Math.max(1, st.weight), 0.65)) * (n <= 25 ? 0.92 : 1)
-      : 1;
-    const gsw = neg ? 1.8 : 1;
-    const thr = neg ? Math.min(0.8, 0.4 + 0.1 * st.weight) : 0.45;
+      ? (0.55 / Math.pow(w, 0.65)) * (n <= 25 ? 0.92 : 1)
+      : (0.58 / Math.pow(w, 0.7)) * (n <= 25 ? 0.9 : 1);
+    const gsw = neg ? 1.8 : 2.0;
+    const thr = neg ? Math.min(0.8, 0.4 + 0.1 * st.weight) : 0.5;
     const cov = coverage(m, g, st.weight, st.detail, gs, gsw);
     const dotR = st.dot;
     const bgR = st.dot * 0.55;
@@ -504,8 +509,9 @@
         // formas positivas: el símbolo se marca con módulos a tamaño completo,
         // sin tocar los módulos claros (así el QR no pierde datos)
         const cv = cov[r * n + c];
-        if (cv >= 0.45){
-          if (dark) ops.push({ t: 'rect', x, y, w: 1, h: 1, r: 0.04, fill: INK });
+        if (cv >= thr){
+          // el glifo se estampa: da igual si el módulo era claro u oscuro
+          ops.push({ t: 'rect', x, y, w: 1, h: 1, r: 0.04, fill: INK });
           continue;
         }
         if (cv > 0.12){
@@ -520,29 +526,6 @@
         else if (bgR > 0) ops.push({ t: 'circle', cx: x + 0.5, cy: y + 0.5, r: bgR, fill: GOLD });
       }
     }
-    // marca de agua: el símbolo se imprime encima de los módulos, en oro.
-    // El oro tiñe sin borrar: los módulos oscuros siguen oscuros.
-    if (!neg){
-      const P = p => [QUIET + (0.5 + (p[0] - 0.5) * gs) * n, QUIET + (0.5 + (p[1] - 0.5) * gs) * n];
-      const [ax, ay] = P(g.apex);
-      const [lx, ly] = P(g.left);
-      const [rx, ry] = P(g.right);
-      const [bx1, by1] = P([g.bar[0], g.bar[1]]);
-      const [bx2, by2] = P([g.bar[2], g.bar[3]]);
-      ops.push({
-        t: 'glyph',
-        ring: g.ring,
-        cx: QUIET + 0.5 * n,
-        cy: QUIET + 0.5 * n,
-        r: RING_R * gs * n,
-        w: 0.048 * st.weight * gs * n,
-        ringW: 0.038 * st.weight * gs * n,
-        segs: [[ax, ay, lx, ly], [ax, ay, rx, ry], [bx1, by1, bx2, by2]],
-        color: neg ? PAPER : '#ffc800',
-        opacity: neg ? 1 : 0.45
-      });
-    }
-
     ops.push(...struct);
     return { ops, total };
   }
@@ -662,7 +645,7 @@
 
     const version = (matrix.length - 17) / 4;
     $('#vmeta').textContent = 'nivel H · ' + matrix.length + ' módulos · v' + version;
-    lastFile = 'sigilo-' + state.shape + '-' + slug(text) + '.png';
+    lastFile = 'qracrata-' + state.shape + '-' + slug(text) + '.png';
     $('#fname').innerHTML = '<b>' + lastFile.replace(/\.png$/, '') + '</b>.png';
 
     drawScene(vBig, scene.ops, sceneTotal, 1200);
@@ -696,7 +679,8 @@
   }
   function loadState(){
     try {
-      const s = JSON.parse(localStorage.getItem(KEY));
+      const raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY);
+      const s = JSON.parse(raw);
       if (!s) return;
       if (typeof s.text === 'string' && s.text.trim()) $('#content').value = s.text;
       if (['circulo', 'a', 'negativa'].includes(s.shape)) state.shape = s.shape;
@@ -779,6 +763,7 @@
     $('#detail-v').textContent = state.detail;
     schedule();
   });
+
 
 
 
