@@ -1,49 +1,42 @@
 <!doctype html>
-<html lang="es" data-aesthetic="serigrafia">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Paleta — Utils Antarquía</title>
 <meta name="description" content="Constructor de paletas: añade colores, genera mezclas, extrae colores de un texto y guarda tus paletas en el navegador.">
-<script>
-  /* la estética elegida se aplica antes de pintar para que no haya destello */
-  try{
-    var __t = localStorage.getItem('antarquia.paleta.tema.v1');
-    if (['serigrafia','galeria','collage','acuarela'].indexOf(__t) >= 0)
-      document.documentElement.dataset.aesthetic = __t;
-  }catch(e){}
-</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 92,27 92,73 50,96 8,73 8,27' fill='%23ffc800'/%3E%3Cpolygon points='50,14 84,33 84,67 50,86 16,67 16,33' fill='%230a0a0a'/%3E%3C/svg%3E">
 <style>
   /* ---------- taller de color: papel, tinta y sombra dura ---------- */
   :root{
-    --paper:#efe7d3;
-    --sheet:#fffdf6;
-    --ink:#16130d;
-    --edge:#16130d;
-    --soft:#6b6252;
-    --body:#3a342a;
-    --yellow:#ffc800;
-    --red:#d93a2b;
+    --paper:#f1efea;
+    --sheet:#fbfaf8;
+    --ink:#111110;
+    --edge:#111110;
+    --soft:#77726a;
+    --body:#3b3833;
+    --yellow:#c8452d;
+    --red:#c8452d;
+    --hl-ink:#fff;
     --field:#ffffff;
-    --field-focus:#fffbe8;
-    --ph:#a3987f;
-    --dash:#bdb096;
-    --dash-ink:#8d8069;
-    --bw:2px;
-    --r:0px;
-    --r-sm:0px;
-    --sh:6px 6px 0 var(--ink);
-    --sh-sm:3px 3px 0 var(--ink);
-    --sh-card:5px 5px 0 var(--ink);
-    --sh-sw:4px 4px 0 var(--ink);
-    --sh-hover:6px 6px 0 var(--ink);
+    --field-focus:#ffffff;
+    --ph:#a8a29a;
+    --dash:#d9d4ca;
+    --dash-ink:#948d83;
+    --bw:1px;
+    --r:2px;
+    --r-sm:2px;
+    --sh:none;
+    --sh-sm:none;
+    --sh-card:none;
+    --sh-sw:none;
+    --sh-hover:none;
     --font-body:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
-    --font-display:"Helvetica Neue",Arial,sans-serif;
-    --fw-display:900;
-    --ls-display:-.055em;
-    --paper-img:radial-gradient(#d6cab0 1px,transparent 1px);
-    --paper-size:22px 22px;
+    --font-display:Georgia,"Times New Roman",serif;
+    --fw-display:400;
+    --ls-display:-.03em;
+    --paper-img:none;
+    --paper-size:auto;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -297,231 +290,38 @@
   }
   .toast.on{opacity:1;transform:translate(-50%,0)}
 
-  /* ---------- barra de estéticas ---------- */
-  .tbar{
-    width:100%;
-    background:var(--sheet);
-    border-bottom:var(--bw) solid var(--ink);
-  }
-  .tbar-in{
-    width:100%;max-width:1040px;margin:0 auto;
-    padding:9px 24px;
-    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-  }
-  .tlabel{
-    font-family:var(--mono);font-size:9px;font-weight:700;
-    letter-spacing:.22em;text-transform:uppercase;color:var(--soft);
-  }
-  .thint{
-    font-family:var(--mono);font-size:9px;letter-spacing:.16em;
-    text-transform:uppercase;color:var(--soft);
-  }
-  .themes{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
-  .tbtn{
-    display:inline-flex;align-items:center;gap:7px;
-    font-family:var(--mono);font-size:10px;font-weight:700;
-    letter-spacing:.09em;text-transform:uppercase;
-    color:var(--ink);background:transparent;
-    border:var(--bw) solid transparent;border-radius:var(--r-sm);
-    padding:6px 9px;cursor:pointer;
-    transition:background .12s ease,color .12s ease,border-color .12s ease;
-  }
-  .tbtn .dots{display:inline-flex;gap:2px}
-  .tbtn .dots i{
-    display:block;width:7px;height:7px;background:var(--d);
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
-  }
-  .tbtn:hover,.tbtn:focus-visible{border-color:var(--ink);outline:none}
-  .tbtn[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
-  @media (max-width:720px){.thint{display:none}}
-
-  /* ---------- estética: galería contemporánea ---------- */
-  html[data-aesthetic="galeria"]{
-    --paper:#f1efea;
-    --sheet:#fbfaf8;
-    --ink:#111110;
-    --edge:#111110;
-    --soft:#77726a;
-    --body:#3b3833;
-    --yellow:#c8452d;
-    --red:#c8452d;
-    --hl-ink:#fff;
-    --field:#ffffff;
-    --field-focus:#ffffff;
-    --ph:#a8a29a;
-    --dash:#d9d4ca;
-    --dash-ink:#948d83;
-    --bw:1px;
-    --r:2px;
-    --r-sm:2px;
-    --sh:none;
-    --sh-sm:none;
-    --sh-card:none;
-    --sh-sw:none;
-    --sh-hover:none;
-    --font-display:Georgia,"Times New Roman",serif;
-    --fw-display:400;
-    --ls-display:-.03em;
-    --paper-img:none;
-    --paper-size:auto;
-  }
-  html[data-aesthetic="galeria"] h1{line-height:.92}
-  html[data-aesthetic="galeria"] h1 mark{
+  /* ---------- detalles de galería ---------- */
+  h1{line-height:.92}
+  h1 mark{
     background:none;border-bottom:3px solid var(--yellow);padding:0 .01em;
   }
-  html[data-aesthetic="galeria"] .sheet{padding:32px 30px 34px}
-  html[data-aesthetic="galeria"] .sheet + .sheet,
-  html[data-aesthetic="galeria"] .twocol,
-  html[data-aesthetic="galeria"] .twocol + .sheet{margin-top:40px}
-  html[data-aesthetic="galeria"] .shead h2{letter-spacing:.26em}
-  html[data-aesthetic="galeria"] .shead h2::before{
+  .sheet{padding:32px 30px 34px}
+  .sheet + .sheet,
+  .twocol,
+  .twocol + .sheet{margin-top:40px}
+  .shead h2{letter-spacing:.26em}
+  .shead h2::before{
     border:0;border-radius:50%;width:7px;height:7px;
   }
-  html[data-aesthetic="galeria"] .sw{height:140px}
-  html[data-aesthetic="galeria"] .sw:hover{transform:none;box-shadow:0 14px 30px -20px rgba(0,0,0,.55)}
-  html[data-aesthetic="galeria"] .btn{border-width:1px;letter-spacing:.17em;box-shadow:none}
-  html[data-aesthetic="galeria"] .btn:hover{background:var(--ink);color:var(--sheet);transform:none;box-shadow:none}
-  html[data-aesthetic="galeria"] .btn.solid{background:var(--yellow);border-color:var(--yellow);color:#fff}
-  html[data-aesthetic="galeria"] .btn.solid:hover{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
-  html[data-aesthetic="galeria"] .btn.danger{box-shadow:none}
-  html[data-aesthetic="galeria"] .pacts .btn{padding:6px 10px;box-shadow:none}
-  html[data-aesthetic="galeria"] .pstrip{height:82px}
-  html[data-aesthetic="galeria"] .pback{background:transparent;box-shadow:none}
-  html[data-aesthetic="galeria"] .pback:hover{background:var(--ink);color:var(--sheet);transform:none;box-shadow:none}
-  html[data-aesthetic="galeria"] .stamp{border-color:var(--dash);color:var(--soft)}
-  html[data-aesthetic="galeria"] .toast{box-shadow:none;background:var(--ink);border-color:var(--ink);color:var(--sheet)}
-  html[data-aesthetic="galeria"] input[type=text],
-  html[data-aesthetic="galeria"] textarea,
-  html[data-aesthetic="galeria"] select{border-width:1px}
-  html[data-aesthetic="galeria"] input[type=text]:focus,
-  html[data-aesthetic="galeria"] textarea:focus,
-  html[data-aesthetic="galeria"] select:focus{border-color:var(--ink);box-shadow:none}
-  html[data-aesthetic="galeria"] .tbtn[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
-
-  /* ---------- estética: collage / riso ---------- */
-  html[data-aesthetic="collage"]{
-    --paper:#f4e8d4;
-    --sheet:#fffaf0;
-    --ink:#1b1712;
-    --edge:#1b1712;
-    --soft:#6d6151;
-    --body:#3a3128;
-    --yellow:#ff4fa3;
-    --red:#ff4fa3;
-    --hl-ink:#fff;
-    --field:#fffdf8;
-    --field-focus:#fff2f8;
-    --ph:#a99a86;
-    --dash:#cbb99e;
-    --dash-ink:#8b7a63;
-    --bw:2px;
-    --r:0px;
-    --r-sm:0px;
-    --sh:6px 6px 0 var(--yellow),11px 11px 0 rgba(0,120,191,.24);
-    --sh-sm:3px 3px 0 var(--yellow);
-    --sh-card:5px 5px 0 var(--yellow),9px 9px 0 rgba(0,120,191,.22);
-    --sh-sw:4px 4px 0 var(--yellow);
-    --sh-hover:7px 7px 0 var(--yellow);
-    --font-display:Georgia,"Times New Roman",serif;
-    --fw-display:700;
-    --ls-display:-.045em;
-    --paper-img:
-      radial-gradient(#e0cfb2 1px,transparent 1px),
-      linear-gradient(118deg,rgba(0,120,191,.07),transparent 42%);
-    --paper-size:20px 20px,100% 100%;
-  }
-  html[data-aesthetic="collage"] h1{
-    font-style:italic;
-    text-shadow:3px 3px 0 rgba(255,79,163,.45);
-  }
-  html[data-aesthetic="collage"] h1 mark{
-    background:linear-gradient(180deg,transparent 55%,rgba(0,120,191,.35) 55%,rgba(0,120,191,.35) 94%,transparent 94%);
-  }
-  html[data-aesthetic="collage"] .sheet{position:relative;transform:rotate(-.35deg)}
-  html[data-aesthetic="collage"] .sheet:nth-of-type(even){transform:rotate(.35deg)}
-  html[data-aesthetic="collage"] .sheet::before{
-    content:"";position:absolute;top:-13px;left:26px;width:92px;height:24px;
-    background:rgba(255,255,255,.6);
-    border-left:1px dashed rgba(27,23,18,.14);
-    border-right:1px dashed rgba(27,23,18,.14);
-    transform:rotate(-2.5deg);
-    box-shadow:0 1px 3px rgba(27,23,18,.12);
-    pointer-events:none;
-  }
-  html[data-aesthetic="collage"] .sw:nth-child(3n+1){transform:rotate(-1.3deg)}
-  html[data-aesthetic="collage"] .sw:nth-child(3n+2){transform:rotate(.9deg)}
-  html[data-aesthetic="collage"] .sw:nth-child(3n){transform:rotate(-.5deg)}
-  html[data-aesthetic="collage"] .sw:hover{transform:rotate(0) translate(-2px,-2px)}
-  html[data-aesthetic="collage"] .btn{transform:rotate(-.5deg)}
-  html[data-aesthetic="collage"] .btn:nth-child(even){transform:rotate(.5deg)}
-  html[data-aesthetic="collage"] .btn:hover{transform:rotate(0) translate(-1px,-1px)}
-  html[data-aesthetic="collage"] .pcard{transform:rotate(.5deg)}
-  html[data-aesthetic="collage"] .pcard:nth-child(even){transform:rotate(-.5deg)}
-  html[data-aesthetic="collage"] .stamp{border-color:#0078bf;color:#0078bf;transform:rotate(4deg)}
-  html[data-aesthetic="collage"] .toast{background:var(--ink);border-color:var(--yellow);color:var(--yellow)}
-
-  /* ---------- estética: pintura / acuarela ---------- */
-  html[data-aesthetic="acuarela"]{
-    --paper:#faf6ee;
-    --sheet:#fffdf9;
-    --ink:#2b2724;
-    --edge:rgba(43,39,36,.16);
-    --soft:#7c7268;
-    --body:#413a34;
-    --yellow:#c9704c;
-    --red:#b8514a;
-    --hl-ink:#fff;
-    --field:#fffdfa;
-    --field-focus:#fff7f1;
-    --ph:#b0a396;
-    --dash:#ddd2c4;
-    --dash-ink:#9a8d7f;
-    --bw:1px;
-    --r:20px;
-    --r-sm:12px;
-    --sh:0 24px 50px -34px rgba(74,52,40,.55);
-    --sh-sm:0 10px 22px -16px rgba(74,52,40,.55);
-    --sh-card:0 18px 36px -26px rgba(74,52,40,.5);
-    --sh-sw:0 12px 24px -16px rgba(74,52,40,.45);
-    --sh-hover:0 22px 36px -20px rgba(74,52,40,.5);
-    --font-display:Georgia,"Times New Roman",serif;
-    --fw-display:400;
-    --ls-display:-.035em;
-    --paper-img:
-      radial-gradient(58% 40% at 10% 6%,rgba(255,200,0,.2),transparent 70%),
-      radial-gradient(50% 36% at 92% 10%,rgba(201,112,76,.18),transparent 70%),
-      radial-gradient(46% 34% at 68% 94%,rgba(107,127,168,.15),transparent 70%),
-      radial-gradient(#e7ddcf 1px,transparent 1px);
-    --paper-size:100% 100%,100% 100%,100% 100%,26px 26px;
-  }
-  html[data-aesthetic="acuarela"] .sheet{border-color:rgba(43,39,36,.12);padding:26px 26px 28px}
-  html[data-aesthetic="acuarela"] .shead{border-bottom:1px solid rgba(43,39,36,.12)}
-  html[data-aesthetic="acuarela"] .shead h2::before{
-    border:0;border-radius:50%;width:9px;height:9px;
-    background:linear-gradient(135deg,var(--yellow),#e0a06b);
-  }
-  html[data-aesthetic="acuarela"] h1 mark{
-    background:linear-gradient(180deg,transparent 62%,rgba(201,112,76,.3) 62%,rgba(201,112,76,.3) 92%,transparent 92%);
-  }
-  html[data-aesthetic="acuarela"] .sw{border-color:transparent}
-  html[data-aesthetic="acuarela"] .sw:hover{transform:translateY(-3px)}
-  html[data-aesthetic="acuarela"] .swcopy{padding:12px 14px}
-  html[data-aesthetic="acuarela"] .btn{border-color:rgba(43,39,36,.18);border-radius:999px;padding:11px 18px}
-  html[data-aesthetic="acuarela"] .btn:hover{background:var(--yellow);border-color:var(--yellow);color:#fff;transform:translateY(-1px)}
-  html[data-aesthetic="acuarela"] .btn.solid{background:var(--yellow);border-color:var(--yellow);color:#fff}
-  html[data-aesthetic="acuarela"] .btn.solid:hover{background:var(--ink);border-color:var(--ink);color:#fff}
-  html[data-aesthetic="acuarela"] .btn.danger{box-shadow:var(--sh-sm);border-color:rgba(184,81,74,.5)}
-  html[data-aesthetic="acuarela"] .pacts .btn{box-shadow:none;padding:6px 12px;font-size:9px}
-  html[data-aesthetic="acuarela"] .pstrip{border-bottom:1px solid rgba(43,39,36,.12);border-radius:var(--r) var(--r) 0 0;overflow:hidden}
-  html[data-aesthetic="acuarela"] .pcard{overflow:hidden}
-  html[data-aesthetic="acuarela"] .pback{border-radius:999px;background:transparent;box-shadow:none}
-  html[data-aesthetic="acuarela"] .pback:hover{background:var(--yellow);border-color:var(--yellow);color:#fff;transform:none;box-shadow:var(--sh-hover)}
-  html[data-aesthetic="acuarela"] .swx{border-color:rgba(43,39,36,.14);box-shadow:var(--sh-sm)}
-  html[data-aesthetic="acuarela"] input[type=text],
-  html[data-aesthetic="acuarela"] textarea,
-  html[data-aesthetic="acuarela"] select{border-color:rgba(43,39,36,.16)}
-  html[data-aesthetic="acuarela"] .toast{background:var(--ink);border-color:var(--ink);color:#fff}
-  html[data-aesthetic="acuarela"] .tbtn[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:#fff}
+  .sw{height:140px}
+  .sw:hover{transform:none;box-shadow:0 14px 30px -20px rgba(0,0,0,.55)}
+  .btn{border-width:1px;letter-spacing:.17em;box-shadow:none}
+  .btn:hover{background:var(--ink);color:var(--sheet);transform:none;box-shadow:none}
+  .btn.solid{background:var(--yellow);border-color:var(--yellow);color:#fff}
+  .btn.solid:hover{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+  .btn.danger{box-shadow:none}
+  .pacts .btn{padding:6px 10px;box-shadow:none}
+  .pstrip{height:82px}
+  .pback{background:transparent;box-shadow:none}
+  .pback:hover{background:var(--ink);color:var(--sheet);transform:none;box-shadow:none}
+  .stamp{border-color:var(--dash);color:var(--soft)}
+  .toast{box-shadow:none;background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+  input[type=text],
+  textarea,
+  select{border-width:1px}
+  input[type=text]:focus,
+  textarea:focus,
+  select:focus{border-color:var(--ink);box-shadow:none}
 
   @media (max-width:560px){
     .pnav,.pw,.pfoot{padding-left:16px;padding-right:16px}
@@ -529,11 +329,6 @@
     .sheet{padding:16px 15px 18px;box-shadow:var(--sh)}
     .swgrid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:14px 12px}
     .sw{height:100px}
-    .tbar-in{padding:8px 16px;gap:8px}
-    .tlabel{display:none}
-    .themes{margin-left:0;width:100%;justify-content:space-between;gap:2px}
-    .tbtn{font-size:9px;padding:6px 6px;letter-spacing:.05em}
-    .tbtn .dots{display:none}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -544,27 +339,6 @@
   <a class="pback" href="../index.html">← panal</a>
   <div class="pbrand"><b>utils</b> / antarquía</div>
 </nav>
-
-<div class="tbar">
-  <div class="tbar-in">
-    <span class="tlabel">estética</span>
-    <span class="thint" id="thint">tintas planas · papel</span>
-    <div class="themes" id="themes" role="group" aria-label="Elegir estética">
-      <button type="button" class="tbtn" data-aesthetic="serigrafia" aria-pressed="true">
-        <span class="dots" aria-hidden="true"><i style="--d:#ffc800"></i><i style="--d:#16130d"></i><i style="--d:#d93a2b"></i></span>serigrafía
-      </button>
-      <button type="button" class="tbtn" data-aesthetic="galeria" aria-pressed="false">
-        <span class="dots" aria-hidden="true"><i style="--d:#f1efea"></i><i style="--d:#111110"></i><i style="--d:#c8452d"></i></span>galería
-      </button>
-      <button type="button" class="tbtn" data-aesthetic="collage" aria-pressed="false">
-        <span class="dots" aria-hidden="true"><i style="--d:#ff4fa3"></i><i style="--d:#0078bf"></i><i style="--d:#f4e8d4"></i></span>collage
-      </button>
-      <button type="button" class="tbtn" data-aesthetic="acuarela" aria-pressed="false">
-        <span class="dots" aria-hidden="true"><i style="--d:#c9704c"></i><i style="--d:#e0a06b"></i><i style="--d:#6b7fa8"></i></span>acuarela
-      </button>
-    </div>
-  </div>
-</div>
 
 <main class="pw">
   <header class="phead">
@@ -976,33 +750,6 @@
   $('#paste').addEventListener('keydown', e => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter'){ e.preventDefault(); runExtract(false); }
   });
-
-  /* ---------- estética ---------- */
-  const THEME_KEY = 'antarquia.paleta.tema.v1';
-  const HINTS = {
-    serigrafia: 'tintas planas · papel',
-    galeria: 'muro blanco · cartela',
-    collage: 'recortes · riso',
-    acuarela: 'aguadas · borde suave'
-  };
-
-  function setTheme(name, remember){
-    if (!HINTS[name]) name = 'serigrafia';
-    document.documentElement.dataset.aesthetic = name;
-    $$('#themes .tbtn').forEach(b => {
-      b.setAttribute('aria-pressed', String(b.dataset.aesthetic === name));
-    });
-    const hint = $('#thint');
-    if (hint) hint.textContent = HINTS[name];
-    if (remember){
-      try { localStorage.setItem(THEME_KEY, name); } catch (e) {}
-    }
-  }
-
-  $$('#themes .tbtn').forEach(b => {
-    b.addEventListener('click', () => setTheme(b.dataset.aesthetic, true));
-  });
-  setTheme(document.documentElement.dataset.aesthetic || 'serigrafia', false);
 
   renderCurrent();
   renderSaved();

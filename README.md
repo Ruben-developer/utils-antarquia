@@ -16,8 +16,8 @@ Un panal de hexágonos. Cada celda es una herramienta.
 | URL | Encode / decode de URLs + análisis de partes y query params |
 | Colores | HEX ↔ RGB ↔ HSL + contraste WCAG |
 | UUID | Genera v4 (aleatorio) y v7 (ordenable por tiempo) |
-| Paleta | Constructor de paletas con 4 estéticas (serigrafía, galería, collage/riso, acuarela): añade, aleatorio, extrae colores de un texto, guarda en `localStorage` y exporta CSS/JSON |
-| QR Acrata | QR nivel H con la silueta Ⓐ (círculo, A sola o negativa) estampada en los módulos, verificado con jsQR y descarga PNG/SVG |
+| Paleta | Constructor de paletas con estética de galería contemporánea: añade, aleatorio, extrae colores de un texto, guarda en `localStorage` y exporta CSS/JSON |
+| QR Acrata | QR nivel H con la silueta Ⓐ (círculo, A sola o negativa) dibujada por el tamaño de los módulos; grosor, puntos y detalle ajustables, verificación con jsQR y descarga PNG/SVG |
 
 ## Estructura
 
@@ -28,6 +28,7 @@ Un panal de hexágonos. Cada celda es una herramienta.
 │   ├── tool.css          # estilos compartidos de las utils
 │   ├── tool.js           # helpers: toast, copiar, descargar
 │   ├── colors-data.js    # Tailwind v3 + nombres CSS (para Paleta)
+│   ├── fonts/            # Anton + Space Mono (para QR Acrata)
 │   └── vendor/
 │       ├── qrcode.js     # qrcode-generator 1.4.4 (MIT)
 │       └── jsQR.js       # jsQR 1.4.0 (Apache-2.0)
@@ -40,13 +41,13 @@ Un panal de hexágonos. Cada celda es una herramienta.
     ├── url.html
     ├── colores.html
     ├── uuid.html
-    ├── paleta.html       # taller de color (diseño propio)
-    └── qr-acrata.html    # QR con la Ⓐ en los módulos (diseño propio)
+    ├── paleta.html       # constructor de paletas (estética galería)
+    └── qr-acrata.html    # QR con la Ⓐ dibujada por los módulos
 ```
 
 Sin build, sin dependencias externas en runtime, sin frameworks. HTML + CSS + JS puro.
 
-Las dos últimas tienen diseño propio (no usan `tool.css`, solo `tool.js`): **Paleta** es un taller de color con cuatro estéticas intercambiables desde la barra superior (serigrafía, galería contemporánea, collage/riso y acuarela) y **QR Acrata** una mesa de esténcil.
+Las dos últimas tienen diseño propio (no usan `tool.css`, solo `tool.js`): **Paleta** es un constructor de paletas con estética de galería contemporánea (papel, filetes finos, tipografía serif) y **QR Acrata** una hoja en blanco y negro, con Anton y Space Mono, donde la Ⓐ se dibuja con el tamaño de los módulos.
 
 ## Agregar una util nueva
 
