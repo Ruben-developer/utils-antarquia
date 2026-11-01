@@ -74,7 +74,7 @@
   .hex{
     position:absolute;inset:0;
     display:block;
-    background:var(--yellow);
+    background:var(--c,var(--yellow));
     clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
     text-decoration:none;
     color:inherit;
@@ -108,7 +108,7 @@
     transform:scale(1.12);
     filter:drop-shadow(0 0 18px rgba(255,200,0,.55));
   }
-  .cell.real:hover .in,.cell.real:focus-within .in{background:var(--yellow)}
+  .cell.real:hover .in,.cell.real:focus-within .in{background:var(--c,var(--yellow))}
   .cell.real:hover .name,.cell.real:focus-within .name{color:#000}
   .cell.real:hover .ico{transform:scale(1.18) rotate(-6deg)}
 
@@ -116,6 +116,28 @@
   .cell.ghost .hex{background:var(--line)}
   .cell.ghost .in{background:#0d0d0d}
   .cell.ghost{pointer-events:none}
+
+  /* grupos: cifrado, datos y diseño */
+  .legend{
+    display:flex;justify-content:center;flex-wrap:wrap;gap:8px;
+    padding:20px 16px 0;
+  }
+  .chip{
+    display:inline-flex;align-items:center;gap:7px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);background:transparent;
+    border:1px solid var(--line);border-radius:0;
+    padding:7px 11px;cursor:pointer;
+    transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .chip i{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none}
+  .chip b{font-weight:700;color:var(--text);opacity:.55}
+  .chip:hover,.chip:focus-visible{color:var(--text);border-color:var(--yellow);outline:none}
+  .chip[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:#000}
+  .chip[aria-pressed="true"] b{color:#000;opacity:.7}
+  .cell.dim{opacity:.14!important;filter:grayscale(1)}
+  .cell.dim:hover,.cell.dim:focus-within{opacity:.55!important}
 
   footer{
     text-align:center;
@@ -153,6 +175,8 @@
   <p class="sub">Herramientas breves, un hexágono a la vez.</p>
 </header>
 
+<nav class="legend" id="legend" aria-label="Grupos de utils"></nav>
+
 <main>
   <div id="wrap" aria-label="Listado de utils"></div>
 </main>
@@ -171,23 +195,70 @@
    - href: ruta al html de la util (ej: "utils/base64.html")
    - desc: línea que aparece abajo al pasar el cursor
    ============================================================ */
+const CATS = {
+  seg: { label:"seguridad", color:"#ffc800" },
+  dat: { label:"datos",     color:"#8fd6c2" },
+  dis: { label:"diseño",    color:"#ff9d7a" }
+};
+
+/* El orden importa: el panal se llena desde el centro hacia afuera,
+   así cada grupo queda junto. */
 const UTILS = [
-  { name:"Base64",    icon:"🔤", href:"utils/base64.html",    desc:"Codifica y decodifica texto en Base64" },
-  { name:"Hash",      icon:"#️⃣", href:"utils/hash.html",      desc:"MD5, SHA-1, SHA-256, SHA-512 de un texto" },
-  { name:"JSON",      icon:"{ }", href:"utils/json.html",      desc:"Formatea, minifica y valida JSON" },
-  { name:"Passwords", icon:"🔑", href:"utils/passwords.html", desc:"Generador de contraseñas seguras" },
-  { name:"Timestamp", icon:"⏱️", href:"utils/timestamp.html", desc:"Epoch ↔ fecha legible" },
-  { name:"URL",       icon:"🔗", href:"utils/url.html",       desc:"Encode / decode de URLs" },
-  { name:"Colores",   icon:"🎨", href:"utils/colores.html",   desc:"HEX ↔ RGB ↔ HSL" },
-  { name:"UUID",      icon:"🆔", href:"utils/uuid.html",      desc:"Genera identificadores únicos" },
-  { name:"Paleta",    icon:"🖌️", href:"utils/paleta.html",    desc:"Constructor de paletas: guarda, extrae y copia colores" },
-  { name:"QR Acrata", icon:"Ⓐ",  href:"utils/qr-acrata.html", desc:"QR con la silueta Ⓐ · nivel H · PNG y SVG" }
+  /* seguridad, cifrado y contraseñas */
+  { name:"Base64",    icon:"🔤", href:"utils/base64.html",    cat:"seg", desc:"Codifica y decodifica texto en Base64" },
+  { name:"Hash",      icon:"#️⃣", href:"utils/hash.html",      cat:"seg", desc:"MD5, SHA-1, SHA-256, SHA-512 de un texto" },
+  { name:"Passwords", icon:"🔑", href:"utils/passwords.html", cat:"seg", desc:"Generador de contraseñas seguras" },
+  /* datos y texto */
+  { name:"JSON",      icon:"{ }", href:"utils/json.html",      cat:"dat", desc:"Formatea, minifica y valida JSON" },
+  { name:"URL",       icon:"🔗", href:"utils/url.html",       cat:"dat", desc:"Encode / decode de URLs" },
+  { name:"Timestamp", icon:"⏱️", href:"utils/timestamp.html", cat:"dat", desc:"Epoch ↔ fecha legible" },
+  { name:"UUID",      icon:"🆔", href:"utils/uuid.html",      cat:"dat", desc:"Genera identificadores únicos" },
+  /* diseño y marca */
+  { name:"Colores",   icon:"🎨", href:"utils/colores.html",   cat:"dis", desc:"HEX ↔ RGB ↔ HSL" },
+  { name:"Paleta",    icon:"🖌️", href:"utils/paleta.html",    cat:"dis", desc:"Constructor de paletas: guarda, extrae y copia colores" },
+  { name:"QR Acrata", icon:"Ⓐ",  href:"utils/qr-acrata.html", cat:"dis", desc:"QR con la silueta Ⓐ · nivel H · PNG y SVG" }
 ];
 
 const wrap = document.getElementById('wrap');
 const info = document.getElementById('info');
 const count = document.getElementById('count');
+const legend = document.getElementById('legend');
 const GAP = 6;
+let filterCat = null;
+
+function groupCount(key){
+  return UTILS.filter(u => u.cat === key).length;
+}
+function idleInfo(){
+  return filterCat
+    ? CATS[filterCat].label + ' · ' + groupCount(filterCat) + ' utils'
+    : 'pasa el cursor sobre una celda';
+}
+function applyFilter(){
+  wrap.querySelectorAll('.cell.real').forEach(el => {
+    el.classList.toggle('dim', !!filterCat && el.dataset.cat !== filterCat);
+  });
+  legend.querySelectorAll('.chip').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.cat === filterCat));
+  });
+  info.textContent = idleInfo();
+  info.classList.toggle('on', !!filterCat);
+}
+
+Object.keys(CATS).forEach(key => {
+  const cat = CATS[key];
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'chip';
+  b.dataset.cat = key;
+  b.setAttribute('aria-pressed', 'false');
+  b.innerHTML = `<i style="--c:${cat.color}" aria-hidden="true"></i>${cat.label} <b>${groupCount(key)}</b>`;
+  b.addEventListener('click', () => {
+    filterCat = filterCat === key ? null : key;
+    applyFilter();
+  });
+  legend.appendChild(b);
+});
 
 function render(){
   wrap.innerHTML = '';
@@ -226,17 +297,22 @@ function render(){
     const real = i < UTILS.length ? UTILS[i] : null;
     const el = document.createElement('div');
     el.className = 'cell ' + (real ? 'real' : 'ghost');
+    if (real) el.dataset.cat = real.cat;
     el.style.cssText =
       `left:${cell.x}px;top:${cell.y}px;width:${w}px;height:${h}px;` +
-      `animation-delay:${Math.min(i * 35, 900)}ms;`;
+      `animation-delay:${Math.min(i * 35, 900)}ms;` +
+      (real ? `--c:${CATS[real.cat].color};` : '');
 
     if (real){
       el.innerHTML =
-        `<a class="hex" href="${real.href}" aria-label="${real.name}">
-           <span class="in"><span class="ico">${real.icon}</span><span class="name">${real.name}</span></span>
+        `<a class="hex" href="${real.href}" aria-label="${real.name} · ${CATS[real.cat].label}">
+           <span class="in">
+             <span class="ico">${real.icon}</span>
+             <span class="name">${real.name}</span>
+           </span>
          </a>`;
       const show = () => { info.textContent = real.desc; info.classList.add('on'); };
-      const hide = () => { info.textContent = 'pasa el cursor sobre una celda'; info.classList.remove('on'); };
+      const hide = () => { info.textContent = idleInfo(); info.classList.toggle('on', !!filterCat); };
       el.addEventListener('mouseenter', show);
       el.addEventListener('mouseleave', hide);
       el.querySelector('a').addEventListener('focus', show);
@@ -253,6 +329,7 @@ function render(){
   });
 
   count.textContent = UTILS.length + (UTILS.length === 1 ? ' util' : ' utils');
+  applyFilter();
 }
 
 let t;
