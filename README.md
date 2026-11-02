@@ -18,7 +18,7 @@ Un panal de hexágonos. Cada celda es una herramienta.
 | UUID | Genera v4 (aleatorio) y v7 (ordenable por tiempo) |
 | Paleta | Constructor de paletas con estética de galería contemporánea: añade, aleatorio, extrae colores de un texto, guarda en `localStorage` y exporta CSS/JSON |
 | QR Acrata | QR nivel H con la silueta Ⓐ (círculo, A sola o negativa) dibujada por el tamaño de los módulos; grosor, puntos y detalle ajustables, verificación con jsQR y descarga PNG/SVG |
-| Grabado | Sube o pega una imagen y queda como una ilustración de periódico de 1890: papel envejecido, tinta de imprenta, trama de líneas o puntos, contorno y trazo irregular; descarga PNG |
+| Grabado | Sube, arrastra o pega una imagen y queda como una ilustración de periódico de 1890: papel envejecido, tinta de imprenta, cinco paletas, «Otro papel», trama de líneas, cruzada o puntos, contorno y trazo irregular; compara con el original, copia la imagen o guárdala con clic derecho |
 
 ## Estructura
 
@@ -49,7 +49,7 @@ Un panal de hexágonos. Cada celda es una herramienta.
 
 Sin build, sin dependencias externas en runtime, sin frameworks. HTML + CSS + JS puro.
 
-Las tres últimas tienen diseño propio (no usan `tool.css`): **Paleta** es un constructor de paletas con estética de galería contemporánea (papel, filetes finos, tipografía serif), **QR Acrata** una hoja en blanco y negro, con Anton y Space Mono, donde la Ⓐ se dibuja con el tamaño de los módulos, y **Grabado** un taller oscuro que procesa la imagen en `<canvas>` sin subirla a ningún sitio.
+Las tres últimas tienen diseño propio (no usan `tool.css`): **Paleta** es un constructor de paletas con estética de galería contemporánea (papel, filetes finos, tipografía serif), **QR Acrata** una hoja en blanco y negro, con Anton y Space Mono, donde la Ⓐ se dibuja con el tamaño de los módulos, y **Grabado** una mesa de imprenta en claro/oscuro que procesa la imagen en `<canvas>` sin subirla a ningún sitio.
 
 ## Agregar una util nueva
 
