@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grabado Antiguo — Utils Antarquía</title>
+<meta name="description" content="Sube una imagen y conviértela en una ilustración de periódico de 1890: papel envejecido, tinta de imprenta y trama de líneas o puntos.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 92,27 92,73 50,96 8,73 8,27' fill='%23ffc800'/%3E%3Cpolygon points='50,14 84,33 84,67 50,86 16,67 16,33' fill='%230a0a0a'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0b0a07;
+    --panel:#13110c;
+    --panel2:#19160f;
+    --line:#2b2518;
+    --line2:#3d3522;
+    --text:#f2eee2;
+    --muted:#8f8874;
+    --dim:#5f5949;
+    --yellow:#ffc800;
+    --paper:#e8ddc4;
+    --ink:#241b10;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --serif:Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(ellipse at 50% 0%,#1b1606 0%,var(--bg) 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    min-height:100vh;display:flex;flex-direction:column;
+    overflow-x:hidden;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--yellow);color:#000}
+  [hidden]{display:none!important}
+
+  /* ---------- barra ---------- */
+  .gnav{
+    width:100%;max-width:1120px;margin:0 auto;
+    padding:20px 24px 16px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border-bottom:1px solid var(--line);
+  }
+  .gback{
+    font-family:var(--mono);font-size:10.5px;font-weight:700;
+    letter-spacing:.16em;text-transform:uppercase;text-decoration:none;
+    color:var(--text);background:var(--panel);
+    border:1px solid var(--line2);padding:8px 14px;
+    transition:background .14s ease,color .14s ease,border-color .14s ease;
+  }
+  .gback:hover,.gback:focus-visible{background:var(--yellow);border-color:var(--yellow);color:#000;outline:none}
+  .gbrand{
+    font-family:var(--mono);font-size:10px;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--dim);white-space:nowrap;
+  }
+  .gbrand b{color:var(--yellow)}
+
+  /* ---------- cabecera ---------- */
+  .gw{flex:1;width:100%;max-width:1120px;margin:0 auto;padding:34px 24px 64px}
+  .ghead{border-top:1px solid var(--line);padding-top:10px;margin-bottom:28px}
+  .gmeta{
+    display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);
+  }
+  h1{
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(40px,8.5vw,84px);
+    line-height:.92;letter-spacing:-.02em;text-transform:uppercase;
+    margin:16px 0 0;
+  }
+  h1 i{color:var(--yellow);font-style:italic;text-transform:none;letter-spacing:-.03em}
+  .glead{max-width:58ch;margin-top:14px;font-size:15px;line-height:1.6;color:#b8b19c}
+  .glead b{color:var(--text);font-weight:600}
+
+  /* ---------- disposición ---------- */
+  .glayout{
+    display:grid;gap:26px 30px;
+    grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+    grid-template-areas:"upload preview" "controls preview";
+    align-items:start;
+  }
+  .a-upload{grid-area:upload}
+  .a-preview{grid-area:preview}
+  .a-controls{grid-area:controls;display:flex;flex-direction:column;gap:20px}
+  @media (max-width:860px){
+    .glayout{grid-template-columns:minmax(0,1fr);grid-template-areas:"upload" "preview" "controls"}
+  }
+
+  /* ---------- tarjetas ---------- */
+  .card{
+    border:1px solid var(--line);background:var(--panel);
+    padding:16px 16px 18px;
+    transition:opacity .16s ease;
+  }
+  .card.off{opacity:.48}
+  .chead{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:12px;
+  }
+  .chead h2{
+    font-family:var(--mono);font-size:10px;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    display:flex;align-items:center;gap:8px;min-width:0;
+  }
+  .chead h2::before{
+    content:"";width:7px;height:7px;background:var(--yellow);
+    display:inline-block;flex:none;
+  }
+  .chead .fname{
+    font-family:var(--mono);font-size:9px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--dim);
+    max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .cdesc{font-size:12px;line-height:1.5;color:var(--muted);margin-bottom:4px}
+
+  /* ---------- interruptor ---------- */
+  .switch{position:relative;display:inline-flex;flex:none;cursor:pointer}
+  .switch input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .switch span{
+    width:38px;height:20px;border:1px solid var(--line2);
+    background:#0a0906;position:relative;display:block;
+    pointer-events:none;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  .switch span::after{
+    content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;
+    background:var(--muted);transition:left .15s ease,background .15s ease;
+  }
+  .switch input:checked + span{background:var(--yellow);border-color:var(--yellow)}
+  .switch input:checked + span::after{left:20px;background:#000}
+  .switch input:focus-visible + span{outline:2px solid var(--yellow);outline-offset:2px}
+
+  /* ---------- campos ---------- */
+  .field{margin-top:12px}
+  .field label,.rng-top label{
+    display:block;font-family:var(--mono);font-size:9px;font-weight:700;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--dim);
+    margin-bottom:6px;
+  }
+  select{
+    width:100%;background:#0a0906;border:1px solid var(--line2);
+    color:var(--text);font-family:var(--mono);font-size:12px;
+    padding:9px 10px;outline:none;border-radius:0;
+  }
+  select:focus{border-color:var(--yellow)}
+  select:disabled{opacity:.6}
+
+  .rng{margin-top:14px}
+  .rng-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:2px}
+  .rng-top label{margin:0}
+  .rng-top output{
+    font-family:var(--mono);font-size:10px;letter-spacing:.04em;
+    color:var(--yellow);background:#0a0906;border:1px solid var(--line2);
+    padding:1px 7px;min-width:44px;text-align:center;
+  }
+  input[type=range]{
+    width:100%;height:22px;accent-color:var(--yellow);
+    background:transparent;cursor:pointer;display:block;
+  }
+  input[type=range]:disabled{cursor:not-allowed}
+
+  /* ---------- subir ---------- */
+  .drop{
+    display:flex;align-items:center;gap:14px;
+    border:1px dashed var(--line2);padding:16px 14px;
+    cursor:pointer;transition:border-color .15s ease,background .15s ease;
+  }
+  .drop:hover,.drop.drag{border-color:var(--yellow);background:rgba(255,200,0,.05)}
+  .drop-ico{font-size:24px;line-height:1;color:var(--yellow);flex:none}
+  .drop b{display:block;font-size:13px;color:var(--text)}
+  .drop small{
+    display:block;margin-top:3px;font-family:var(--mono);
+    font-size:9.5px;line-height:1.5;color:var(--dim);
+  }
+
+  /* ---------- vista previa ---------- */
+  .gpreview{position:sticky;top:20px}
+  @media (max-width:860px){.gpreview{position:static}}
+  .paper-frame{
+    position:relative;background:#080704;padding:12px;
+    border:1px solid var(--line2);
+    box-shadow:0 30px 70px rgba(0,0,0,.55);
+  }
+  .paper-frame canvas{display:block;width:100%;height:auto;background:var(--paper)}
+  .paper-frame::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 70px rgba(0,0,0,.35);
+  }
+  .prow{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;margin-top:12px;
+  }
+  #status{
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--dim);
+  }
+  .btn{
+    font-family:var(--mono);font-size:10px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;
+    color:var(--yellow);background:transparent;
+    border:1px solid var(--line2);border-radius:0;
+    padding:10px 15px;cursor:pointer;
+    transition:background .14s ease,color .14s ease,border-color .14s ease;
+  }
+  .btn:hover,.btn:focus-visible{background:#1a1e26;border-color:var(--yellow);outline:none}
+  .btn.solid{background:var(--yellow);border-color:var(--yellow);color:#000}
+  .btn.solid:hover{background:#ffd83d;border-color:#ffd83d}
+  .btn:active{transform:translateY(1px)}
+  .hint{
+    font-family:var(--mono);font-size:10px;line-height:1.7;
+    color:var(--dim);margin-top:12px;
+  }
+  .hint b{color:var(--muted);font-weight:700}
+
+  /* ---------- pie ---------- */
+  .gfoot{
+    border-top:1px solid var(--line);padding:16px 24px 26px;
+    display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    max-width:1120px;width:100%;margin:0 auto;
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--dim);
+  }
+  .gfoot a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line2)}
+  .gfoot a:hover{color:var(--yellow);border-color:var(--yellow)}
+
+  /* ---------- aviso ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);
+    background:var(--yellow);color:#000;
+    font-family:var(--mono);font-size:10.5px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;
+    padding:11px 18px;opacity:0;pointer-events:none;
+    transition:opacity .18s ease,transform .18s ease;z-index:99;
+    box-shadow:0 10px 40px rgba(255,200,0,.28);
+  }
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:560px){
+    .gnav,.gw,.gfoot{padding-left:16px;padding-right:16px}
+    .gw{padding-top:26px}
+    .paper-frame{padding:8px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="gnav">
+  <a class="gback" href="../index.html">← panal</a>
+  <div class="gbrand"><b>utils</b> / antarquía</div>
+</nav>
+
+<main class="gw">
+  <header class="ghead">
+    <div class="gmeta"><span>ficha 11 · taller de imagen</span><span>tinta y papel · 1890</span></div>
+    <h1>Grabado <i>antiguo</i></h1>
+    <p class="glead">Sube una imagen y queda como una <b>ilustración de periódico de 1890</b>. Papel envejecido, tinta de imprenta y una trama de líneas o puntos.</p>
+  </header>
+
+  <div class="glayout">
+
+    <section class="card a-upload" aria-label="Subir imagen">
+      <div class="chead">
+        <h2>01 · imagen</h2>
+        <span class="fname" id="fname">ejemplo</span>
+      </div>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept="image/*" hidden>
+        <span class="drop-ico" aria-hidden="true">⇪</span>
+        <span>
+          <b>Subir imagen</b>
+          <small>o arrástrala aquí · también puedes pegarla</small>
+        </span>
+      </label>
+    </section>
+
+    <section class="card a-preview" aria-label="Imagen con efecto de grabado">
+      <div class="paper-frame">
+        <canvas id="out" width="900" height="700" role="img" aria-label="Imagen con efecto de grabado antiguo"></canvas>
+      </div>
+      <div class="prow">
+        <span id="status">cargando ejemplo…</span>
+        <button class="btn solid" id="dl" type="button">Bajar PNG</button>
+      </div>
+      <p class="hint">También puedes arrastrar una imagen aquí o pegarla. Para guardar el resultado, usa <b>Bajar PNG</b> o haz clic derecho sobre la imagen y elige <b>Guardar imagen</b> (en el celular, mantén presionado).</p>
+    </section>
+
+    <div class="a-controls">
+      <section class="card" id="color-card" aria-label="Efecto de color">
+        <div class="chead">
+          <h2>02 · efecto de color</h2>
+          <label class="switch">
+            <input type="checkbox" id="color-on" checked aria-label="Activar efecto de color">
+            <span aria-hidden="true"></span>
+          </label>
+        </div>
+        <p class="cdesc">Papel envejecido y tinta de imprenta.</p>
+
+        <div class="field">
+          <label for="palette">paleta</label>
+          <select id="palette">
+            <option value="envejecido" selected>Envejecido</option>
+            <option value="sepia">Sepia</option>
+            <option value="tinta">Tinta azul</option>
+            <option value="carbon">Carbón</option>
+          </select>
+        </div>
+
+        <div class="rng">
+          <div class="rng-top"><label for="aging">envejecido</label><output id="aging-v">60</output></div>
+          <input type="range" id="aging" min="0" max="100" value="60">
+        </div>
+
+        <div class="rng">
+          <div class="rng-top"><label for="ink">intensidad de tinta</label><output id="ink-v">100</output></div>
+          <input type="range" id="ink" min="0" max="100" value="100">
+        </div>
+      </section>
+
+      <section class="card" id="shape-card" aria-label="Efecto de formas">
+        <div class="chead">
+          <h2>03 · efecto de formas</h2>
+          <label class="switch">
+            <input type="checkbox" id="shapes-on" checked aria-label="Activar efecto de formas">
+            <span aria-hidden="true"></span>
+          </label>
+        </div>
+        <p class="cdesc">Trama de líneas o puntos, como en un grabado.</p>
+
+        <div class="field">
+          <label for="trama">trama</label>
+          <select id="trama">
+            <option value="lineas" selected>Líneas</option>
+            <option value="puntos">Puntos</option>
+            <option value="cruzado">Líneas cruzadas</option>
+          </select>
+        </div>
+
+        <div class="rng">
+          <div class="rng-top"><label for="density">densidad</label><output id="density-v">65</output></div>
+          <input type="range" id="density" min="10" max="100" value="65">
+        </div>
+
+        <div class="rng">
+          <div class="rng-top"><label for="contour">contorno</label><output id="contour-v">55</output></div>
+          <input type="range" id="contour" min="0" max="100" value="55">
+        </div>
+
+        <div class="rng">
+          <div class="rng-top"><label for="contrast">contraste</label><output id="contrast-v">120</output></div>
+          <input type="range" id="contrast" min="50" max="200" value="120">
+        </div>
+
+        <div class="rng">
+          <div class="rng-top"><label for="jitter">trazo irregular</label><output id="jitter-v">50</output></div>
+          <input type="range" id="jitter" min="0" max="100" value="50">
+        </div>
+      </section>
+    </div>
+
+  </div>
+</main>
+
+<footer class="gfoot">
+  <span>utils.antarquia.cl</span>
+  <a href="../index.html">volver al panal</a>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+
+  const PALETTES = {
+    envejecido:{ paper:'#e8ddc4', ink:'#241b10', warm:'#a9834a' },
+    sepia:     { paper:'#f2e4c8', ink:'#4a2e17', warm:'#b97a3c' },
+    tinta:     { paper:'#e9ece4', ink:'#1b2a3a', warm:'#5f7d96' },
+    carbon:    { paper:'#d9d6cd', ink:'#121212', warm:'#7c776a' }
+  };
+
+  const state = {
+    color:true, palette:'envejecido', aging:60, ink:100,
+    shapes:true, trama:'lineas', density:65, contour:55, contrast:120, jitter:50
+  };
+
+  const out = $('out');
+  const ctx = out.getContext('2d');
+  let source = null;
+  let sourceName = 'ejemplo';
+  let timer = null;
+
+  /* ---------- utilidades ---------- */
+  function hexToRgb(hex){
+    const n = parseInt(hex.slice(1), 16);
+    return { r:(n >> 16) & 255, g:(n >> 8) & 255, b:n & 255 };
+  }
+  function rgba(hex, a){
+    const c = hexToRgb(hex);
+    return 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + a + ')';
+  }
+  function rnd(x, y){
+    const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+    return s - Math.floor(s);
+  }
+
+  /* ---------- papel ---------- */
+  function drawPaper(W, H, pal){
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = pal.paper;
+    ctx.fillRect(0, 0, W, H);
+
+    const aging = state.color ? state.aging / 100 : 0;
+    if (aging <= 0) return;
+
+    const n = Math.round(10 + aging * 40);
+    for (let i = 0; i < n; i++){
+      const x = rnd(i * 3.1, 1.7) * W;
+      const y = rnd(i * 5.3, 2.9) * H;
+      const r = (0.02 + rnd(i * 7.7, 3.3) * 0.10) * Math.min(W, H);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, rgba(pal.warm, 0.055 * aging));
+      g.addColorStop(1, rgba(pal.warm, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+
+    ctx.strokeStyle = rgba(pal.ink, 0.05 * aging);
+    ctx.lineWidth = Math.max(0.6, Math.min(W, H) / 1400);
+    ctx.beginPath();
+    const m = Math.round(120 * aging);
+    for (let i = 0; i < m; i++){
+      const x = rnd(i * 1.7, 9.1) * W;
+      const y = rnd(i * 2.3, 4.7) * H;
+      const l = 2 + rnd(i * 3.7, 6.1) * 10;
+      const a = rnd(i * 5.9, 8.3) * Math.PI;
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l);
+    }
+    ctx.stroke();
+  }
+
+  function drawVignette(W, H, pal){
+    const g = ctx.createRadialGradient(
+      W / 2, H / 2, Math.min(W, H) * 0.30,
+      W / 2, H / 2, Math.max(W, H) * 0.72
+    );
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, rgba(pal.ink, 0.18));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  /* ---------- bordes ---------- */
+  function sobel(lum, W, H){
+    const e = new Float32Array(W * H);
+    for (let y = 1; y < H - 1; y++){
+      for (let x = 1; x < W - 1; x++){
+        const i = y * W + x;
+        const gx =
+          -lum[i - W - 1] - 2 * lum[i - 1] - lum[i + W - 1] +
+           lum[i - W + 1] + 2 * lum[i + 1] + lum[i + W + 1];
+        const gy =
+          -lum[i - W - 1] - 2 * lum[i - W] - lum[i - W + 1] +
+           lum[i + W - 1] + 2 * lum[i + W] + lum[i + W + 1];
+        e[i] = Math.min(1, Math.hypot(gx, gy) / 255);
+      }
+    }
+    return e;
+  }
+
+  /* ---------- trama de líneas ---------- */
+  function drawLines(W, H, lum, edges, pal, vertical){
+    const gap = Math.max(3, 16 - state.density * 0.13);
+    const jitter = state.jitter / 100;
+    const contour = state.contour / 100;
+    const inkA = 0.25 + state.ink / 100 * 0.75;
+    const len = vertical ? H : W;
+    const span = vertical ? W : H;
+    const paths = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+
+    for (let base = gap / 2; base < span; base += gap){
+      let cur = -1;
+      for (let t = 0; t < len; t += 2){
+        const x = vertical ? base : t;
+        const y = vertical ? t : base;
+        const ix = x | 0;
+        const iy = y | 0;
+        const i = iy * W + ix;
+        let d = 1 - lum[i] / 255;
+        if (edges) d = Math.min(1, d * 1.1 + edges[i] * contour * 1.6);
+        if (d <= 0.08 || rnd(ix, iy) < jitter * 0.07){ cur = -1; continue; }
+
+        const wob = jitter ? Math.sin(t * 0.035 + base * 0.6) * jitter * gap * 0.38 : 0;
+        const px = vertical ? x + wob : x;
+        const py = vertical ? y : y + wob;
+        const b = d < 0.28 ? 0 : d < 0.5 ? 1 : d < 0.75 ? 2 : 3;
+        const p = paths[b];
+        if (b !== cur){ p.moveTo(px, py); cur = b; }
+        else p.lineTo(px, py);
+      }
+    }
+
+    const widths = [0.55, 0.95, 1.5, 2.3];
+    const alphas = [0.55, 0.72, 0.88, 1];
+    ctx.strokeStyle = pal.ink;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let b = 0; b < 4; b++){
+      ctx.globalAlpha = inkA * alphas[b];
+      ctx.lineWidth = Math.max(0.5, widths[b] * (gap / 7));
+      ctx.stroke(paths[b]);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- trama de puntos ---------- */
+  function drawDots(W, H, lum, edges, pal){
+    const gap = Math.max(3.2, 16 - state.density * 0.13);
+    const jitter = state.jitter / 100;
+    const contour = state.contour / 100;
+    const inkA = 0.3 + state.ink / 100 * 0.7;
+    const rMax = gap * 0.72;
+
+    ctx.beginPath();
+    for (let y = gap / 2; y < H; y += gap){
+      for (let x = gap / 2; x < W; x += gap){
+        const ix = x | 0;
+        const iy = y | 0;
+        const i = iy * W + ix;
+        let d = 1 - lum[i] / 255;
+        if (edges) d = Math.min(1, d * 1.1 + edges[i] * contour * 1.8);
+        if (d <= 0.06) continue;
+        const r = Math.max(0.4, rMax * Math.pow(d, 0.7));
+        const jx = jitter ? (rnd(ix, iy) - 0.5) * gap * 0.35 * jitter : 0;
+        const jy = jitter ? (rnd(iy, ix) - 0.5) * gap * 0.35 * jitter : 0;
+        ctx.moveTo(x + jx + r, y + jy);
+        ctx.arc(x + jx, y + jy, r, 0, 6.2832);
+      }
+    }
+    ctx.fillStyle = pal.ink;
+    ctx.globalAlpha = inkA;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- duotono (formas apagadas) ---------- */
+  function drawDuotone(W, H, lum, pal){
+    const tmp = document.createElement('canvas');
+    tmp.width = W;
+    tmp.height = H;
+    const tc = tmp.getContext('2d');
+    const img = tc.createImageData(W, H);
+    const ink = hexToRgb(pal.ink);
+    const a0 = 0.3 + state.ink / 100 * 0.7;
+    for (let i = 0; i < lum.length; i++){
+      const d = 1 - lum[i] / 255;
+      const o = i * 4;
+      img.data[o] = ink.r;
+      img.data[o + 1] = ink.g;
+      img.data[o + 2] = ink.b;
+      img.data[o + 3] = Math.round(255 * d * a0);
+    }
+    tc.putImageData(img, 0, 0);
+    ctx.drawImage(tmp, 0, 0);
+  }
+
+  /* ---------- render ---------- */
+  function render(){
+    if (!source) return;
+    const W = source.width;
+    const H = source.height;
+    out.width = W;
+    out.height = H;
+
+    const pal = state.color
+      ? PALETTES[state.palette]
+      : { paper:'#ffffff', ink:'#000000', warm:'#888888' };
+
+    drawPaper(W, H, pal);
+
+    const data = source.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, W, H).data;
+    const lum = new Float32Array(W * H);
+    const c = state.contrast / 100;
+    for (let i = 0, j = 0; i < data.length; i += 4, j++){
+      let l = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+      l = (l - 128) * c + 128;
+      lum[j] = l < 0 ? 0 : l > 255 ? 255 : l;
+    }
+
+    if (state.shapes){
+      const edges = state.contour > 0 ? sobel(lum, W, H) : null;
+      if (state.trama === 'puntos'){
+        drawDots(W, H, lum, edges, pal);
+      } else {
+        drawLines(W, H, lum, edges, pal, false);
+        if (state.trama === 'cruzado') drawLines(W, H, lum, edges, pal, true);
+      }
+    } else {
+      drawDuotone(W, H, lum, pal);
+    }
+
+    drawVignette(W, H, pal);
+
+    const trama = !state.shapes
+      ? 'duotono'
+      : state.trama === 'puntos'
+        ? 'puntos'
+        : state.trama === 'cruzado' ? 'líneas cruzadas' : 'líneas';
+    $('status').textContent = sourceName + ' · ' + W + ' × ' + H + ' px · ' + trama;
+  }
+
+  function schedule(ms){
+    clearTimeout(timer);
+    timer = setTimeout(render, ms === undefined ? 140 : ms);
+  }
+
+  /* ---------- cargar imagen ---------- */
+  function setSource(img, name){
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    const sc = Math.min(1, 1600 / Math.max(iw, ih));
+    const w = Math.max(1, Math.round(iw * sc));
+    const h = Math.max(1, Math.round(ih * sc));
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.fillStyle = '#fff';
+    x.fillRect(0, 0, w, h);
+    x.imageSmoothingEnabled = true;
+    x.imageSmoothingQuality = 'high';
+    x.drawImage(img, 0, 0, w, h);
+    source = c;
+    sourceName = name || 'imagen';
+    $('fname').textContent = sourceName;
+    render();
+  }
+
+  function loadFile(file){
+    if (!file || !/^image\//.test(file.type)) return toast('Ese archivo no es una imagen');
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function(){
+      const name = (file.name || 'imagen').replace(/\.[^.]+$/, '').slice(0, 30) || 'imagen';
+      setSource(img, name);
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = function(){
+      URL.revokeObjectURL(url);
+      toast('No se pudo leer la imagen');
+    };
+    img.src = url;
+  }
+
+  /* ---------- ejemplo ---------- */
+  const SAMPLE = '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700" viewBox="0 0 900 700">' +
+    '<defs>' +
+      '<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dcdcdc"/></linearGradient>' +
+      '<linearGradient id="env" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8f8f8f"/><stop offset=".45" stop-color="#d8d8d8"/><stop offset="1" stop-color="#9a9a9a"/></linearGradient>' +
+    '</defs>' +
+    '<rect width="900" height="700" fill="url(#sky)"/>' +
+    '<g fill="none" stroke="#1a1a1a" stroke-linecap="round" stroke-linejoin="round">' +
+      '<circle cx="742" cy="118" r="42" fill="#ededed" stroke-width="3"/>' +
+      '<path d="M742 50v-18M742 204v-18M674 118h-18M810 118h-18M694 70l-13-13M790 70l13-13M694 166l-13 13M790 166l13 13" stroke-width="2"/>' +
+      '<path d="M92 150q30-34 66-12 18-30 52-14 30-6 38 26" stroke-width="3"/>' +
+      '<path d="M620 208q26-28 58-10 16-24 44-10" stroke-width="2.5"/>' +
+      '<path d="M450 60C340 60 286 150 286 250c0 100 80 164 164 174 84-10 164-74 164-174 0-100-54-190-164-190Z" fill="url(#env)" stroke-width="4"/>' +
+      '<path d="M450 60c-42 100-42 270 0 364" stroke-width="2"/>' +
+      '<path d="M450 60c42 100 42 270 0 364" stroke-width="2"/>' +
+      '<path d="M450 60c-78 80-98 260 0 364" stroke-width="2"/>' +
+      '<path d="M450 60c78 80 98 260 0 364" stroke-width="2"/>' +
+      '<path d="M450 60c-120 100-132 240 0 364" stroke-width="1.5"/>' +
+      '<path d="M450 60c120 100 132 240 0 364" stroke-width="1.5"/>' +
+      '<path d="M300 200c80 24 220 24 300 0" stroke-width="2.5"/>' +
+      '<path d="M292 270c88 28 228 28 316 0" stroke-width="2"/>' +
+      '<path d="M300 340c80 26 220 26 300 0" stroke-width="2"/>' +
+      '<g stroke-width="1.4">' +
+        '<path d="M330 220l14-18M322 250l18-24M318 282l20-26M322 314l20-26M334 346l18-24M350 374l16-22"/>' +
+        '<path d="M570 220l-14-18M578 250l-18-24M582 282l-20-26M578 314l-20-26M566 346l-18-24M550 374l-16-22"/>' +
+      '</g>' +
+      '<path d="M418 470h64l-8 52h-48Z" fill="#b5b5b5" stroke-width="3"/>' +
+      '<path d="M426 486h48M428 502h44" stroke-width="1.5"/>' +
+      '<path d="M404 424l14 46M496 424l-14 46M430 424v46M470 424v46" stroke-width="2"/>' +
+      '<path d="M442 452q8-10 16 0" stroke-width="2"/>' +
+      '<path d="M0 575c120-30 220-15 330 0 140 19 230-27 370-15 90 8 150 20 200 14v126H0Z" fill="#d2d2d2" stroke-width="3"/>' +
+      '<path d="M0 620c140-26 260 6 400-4 160-12 280 12 500-10v94H0Z" fill="#c2c2c2" stroke-width="2"/>' +
+      '<path d="M120 560v-28M104 548l16-22 16 22Z" fill="#9a9a9a" stroke-width="2"/>' +
+      '<path d="M170 566v-22M158 556l12-16 12 16Z" fill="#9a9a9a" stroke-width="2"/>' +
+      '<path d="M760 560v-26M746 548l14-20 14 20Z" fill="#9a9a9a" stroke-width="2"/>' +
+      '<path d="M200 120q10-10 20 0 10-10 20 0" stroke-width="2"/>' +
+      '<path d="M250 100q8-8 16 0 8-8 16 0" stroke-width="1.6"/>' +
+      '<path d="M610 140q9-9 18 0 9-9 18 0" stroke-width="1.8"/>' +
+      '<path d="M60 640l24-8M110 650l24-8M160 642l24-8M700 640l24-8M750 650l24-8M800 642l24-8" stroke-width="1.2"/>' +
+    '</g></svg>';
+
+  function loadSample(){
+    const img = new Image();
+    img.onload = function(){ setSource(img, 'ejemplo'); };
+    img.onerror = function(){ $('status').textContent = 'sube una imagen para empezar'; };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(SAMPLE);
+  }
+
+  /* ---------- controles ---------- */
+  function bindRange(id, key){
+    const el = $(id);
+    const val = $(id + '-v');
+    el.addEventListener('input', function(){
+      state[key] = Number(el.value);
+      val.textContent = el.value;
+      schedule();
+    });
+  }
+  bindRange('aging', 'aging');
+  bindRange('ink', 'ink');
+  bindRange('density', 'density');
+  bindRange('contour', 'contour');
+  bindRange('contrast', 'contrast');
+  bindRange('jitter', 'jitter');
+
+  $('palette').addEventListener('change', function(){
+    state.palette = this.value;
+    schedule(0);
+  });
+  $('trama').addEventListener('change', function(){
+    state.trama = this.value;
+    schedule(0);
+  });
+
+  const colorCard = $('color-card');
+  const shapeCard = $('shape-card');
+  function syncDisabled(){
+    colorCard.classList.toggle('off', !state.color);
+    colorCard.querySelectorAll('select, input[type=range]').forEach(function(el){ el.disabled = !state.color; });
+    shapeCard.classList.toggle('off', !state.shapes);
+    shapeCard.querySelectorAll('select, input[type=range]').forEach(function(el){ el.disabled = !state.shapes; });
+  }
+  $('color-on').addEventListener('change', function(){
+    state.color = this.checked;
+    syncDisabled();
+    schedule(0);
+  });
+  $('shapes-on').addEventListener('change', function(){
+    state.shapes = this.checked;
+    syncDisabled();
+    schedule(0);
+  });
+
+  /* ---------- subir / arrastrar / pegar ---------- */
+  $('file').addEventListener('change', function(e){
+    if (e.target.files && e.target.files[0]) loadFile(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  const drop = $('drop');
+  ['dragenter', 'dragover'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('drag'); });
+  });
+  ['dragleave', 'drop'].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('drag'); });
+  });
+  drop.addEventListener('drop', function(e){
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) loadFile(f);
+  });
+
+  const preview = document.querySelector('.a-preview');
+  preview.addEventListener('dragover', function(e){ e.preventDefault(); });
+  preview.addEventListener('drop', function(e){
+    e.preventDefault();
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) loadFile(f);
+  });
+
+  document.addEventListener('paste', function(e){
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++){
+      if (items[i].type && items[i].type.indexOf('image/') === 0){
+        const f = items[i].getAsFile();
+        if (f){ loadFile(f); e.preventDefault(); return; }
+      }
+    }
+  });
+
+  /* ---------- descarga ---------- */
+  $('dl').addEventListener('click', function(){
+    out.toBlob(function(b){
+      if (!b) return toast('No se pudo generar el PNG');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'grabado-antiguo.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    }, 'image/png');
+  });
+
+  /* ---------- aviso ---------- */
+  let toastTimer = null;
+  function toast(msg){
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 2200);
+  }
+
+  syncDisabled();
+  loadSample();
+})();
+</script>
+</body>
+</html>
