@@ -10,7 +10,7 @@
 <style>
   .swatch{
     height:150px;
-    border-radius:12px;
+    border-radius:0;
     border:1px solid #2a2411;
     display:flex;
     align-items:flex-end;
@@ -24,17 +24,17 @@
   }
   .vals{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
   .valbox{
-    background:#0b0b0b;border:1px solid #262112;border-radius:10px;padding:12px;
+    background:#0b0b0b;border:1px solid #262112;border-radius:0;padding:12px;
     font-family:var(--mono);cursor:pointer;transition:border-color .18s ease,background .18s ease;
   }
   .valbox:hover{border-color:var(--yellow);background:#141208}
   .valbox .k{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#7d775f;display:block;margin-bottom:6px}
   .valbox .v{font-size:13px;color:var(--yellow-soft);word-break:break-all}
   .swatchrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  input[type=color]{width:52px;height:44px;padding:0;border:1px solid #2a2411;border-radius:10px;background:#0b0b0b;cursor:pointer}
+  input[type=color]{width:52px;height:44px;padding:0;border:1px solid #2a2411;border-radius:0;background:#0b0b0b;cursor:pointer}
   .contrast{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
-  .cbox{border:1px solid #262112;border-radius:10px;padding:12px 14px;font-family:var(--mono);font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .badge{font-size:10px;letter-spacing:.1em;padding:4px 9px;border-radius:999px;text-transform:uppercase;font-weight:700}
+  .cbox{border:1px solid #262112;border-radius:0;padding:12px 14px;font-family:var(--mono);font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .badge{font-size:10px;letter-spacing:.1em;padding:4px 9px;border-radius:0;text-transform:uppercase;font-weight:700}
   .aa{background:#1e3a14;color:#9be37a}
   .no{background:#3a1414;color:#ff6b6b}
   @media (max-width:620px){.vals{grid-template-columns:1fr}.contrast{grid-template-columns:1fr}}

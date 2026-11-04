@@ -7,35 +7,34 @@
 <meta name="description" content="Genera un QR con la silueta Ⓐ de Antarquía. Tres formas, grosor y puntos ajustables, descarga PNG y SVG y verificación en el navegador.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 92,27 92,73 50,96 8,73 8,27' fill='%23ffc800'/%3E%3Cpolygon points='50,14 84,33 84,67 50,86 16,67 16,33' fill='%230a0a0a'/%3E%3C/svg%3E">
 <style>
-@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/anton-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/anton-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
-@font-face{font-family:'Space Mono';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/spacemono-400-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:'Space Mono';font-style:normal;font-weight:400;font-display:swap;src:url('../assets/fonts/spacemono-400-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
-@font-face{font-family:'Space Mono';font-style:normal;font-weight:700;font-display:swap;src:url('../assets/fonts/spacemono-700-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:'Space Mono';font-style:normal;font-weight:700;font-display:swap;src:url('../assets/fonts/spacemono-700-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
 /* Layout: zine/fotocopia. Entrada + controles a la izquierda, QR grande a la derecha; en móvil el QR va entre la entrada y los controles. */
 :root{
-  --bg:#ffffff; --fg:#000000; --mut:#505050; --line:#000000;
-  --display:'Anton','Impact','Arial Narrow',sans-serif;
-  --mono:'Space Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --bg:#0a0a0a; --panel:#121212; --fg:#f4f1e6; --mut:#8b8672;
+  --line:#2b2300; --line-2:#3d3522; --accent:#ffc800; --dim:#4a4530;
+  --display:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --hex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='62'%3E%3Cpath d='M0 31L18 5H54L72 31L54 57H18Z' fill='none' stroke='%23ffc800' stroke-width='1'/%3E%3C/svg%3E");
+  color-scheme:dark;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){--bg:#000000;--fg:#ffffff;--mut:#b4b4b4;--line:#ffffff;color-scheme:dark}
-}
-:root[data-theme="dark"]{--bg:#000000;--fg:#ffffff;--mut:#b4b4b4;--line:#ffffff;color-scheme:dark}
 
 *{box-sizing:border-box}
 body{
-  background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:14px;line-height:1.55;
+  background:radial-gradient(ellipse at 50% 0%, #1a1500 0%, var(--bg) 58%), var(--bg);
+  color:var(--fg);font-family:var(--mono);font-size:14px;line-height:1.55;
   padding-block:24px 56px;
   padding-left:max(16px,env(safe-area-inset-left,0px));
   padding-right:max(16px,env(safe-area-inset-right,0px));
 }
-.wrap{max-width:1000px;margin:0 auto}
-header{display:flex;align-items:center;gap:16px;border-bottom:4px solid var(--line);padding-bottom:16px;margin-bottom:26px}
-.logo{width:clamp(48px,9vw,72px);height:auto;flex:none;color:var(--fg)}
-h1{font-family:var(--display);font-weight:400;font-size:clamp(34px,7.5vw,60px);line-height:.95;letter-spacing:.02em;text-transform:uppercase;margin:0;text-wrap:balance}
-header p{margin:6px 0 0;color:var(--mut);font-size:13px}
+.wrap{max-width:1000px;margin:0 auto;position:relative;z-index:1}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:var(--hex),var(--hex);
+  background-size:72px 62px;background-position:0 0,36px 31px;opacity:.05;
+}
+header{display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:26px}
+.logo{width:clamp(46px,8vw,64px);height:auto;flex:none;color:var(--accent)}
+h1{font-family:var(--display);font-weight:900;font-size:clamp(30px,5.4vw,44px);line-height:1;letter-spacing:-.03em;text-transform:uppercase;margin:0;text-wrap:balance}
+header p{margin:8px 0 0;color:var(--mut);font-size:12px;line-height:1.5}
 
 .grid{
   display:grid;gap:26px 32px;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
@@ -45,55 +44,60 @@ header p{margin:6px 0 0;color:var(--mut);font-size:13px}
 @media (max-width:780px){
   .grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"input" "preview" "controls"}
 }
-.lbl{display:block;font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 7px}
+.lbl{display:block;font-weight:700;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin:0 0 7px}
 textarea{
-  width:100%;min-height:96px;resize:vertical;font:inherit;font-size:14px;line-height:1.45;padding:12px;
-  border:2px solid var(--line);border-radius:0;background:var(--bg);color:var(--fg);word-break:break-all;
+  width:100%;min-height:96px;resize:vertical;font:inherit;font-size:13px;line-height:1.45;padding:12px 14px;
+  border:1px solid var(--line-2);border-radius:0;background:#0a0906;color:var(--fg);word-break:break-all;
 }
+textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,200,0,.14)}
 .btn{
-  font:inherit;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
-  padding:10px 14px;border:2px solid var(--line);border-radius:0;background:var(--bg);color:var(--fg);cursor:pointer;
+  font:inherit;font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  padding:10px 15px;border:1px solid var(--line-2);border-radius:0;background:transparent;color:var(--accent);cursor:pointer;
 }
-.btn:hover:not(:disabled){background:var(--fg);color:var(--bg)}
-.btn.solid{background:var(--fg);color:var(--bg)}
-.btn.solid:hover:not(:disabled){background:var(--bg);color:var(--fg)}
+.btn:hover:not(:disabled){background:var(--accent);border-color:var(--accent);color:#000}
+.btn.solid{background:var(--accent);border-color:var(--accent);color:#000}
+.btn.solid:hover:not(:disabled){background:#ffd83d;border-color:#ffd83d;color:#000}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-:is(.btn,textarea,input,.seg button):focus-visible{outline:3px solid var(--fg);outline-offset:3px}
+:is(.btn,textarea,input,.seg button):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
 
 .ctl{display:grid;gap:20px}
 .ctl>div{min-width:0}
-.seg{display:flex;border:2px solid var(--line)}
+.seg{display:flex;border:1px solid var(--line-2)}
 .seg button{
-  flex:1;min-width:0;font:inherit;font-size:12px;font-weight:700;letter-spacing:.04em;padding:9px 6px;
-  border:0;border-right:2px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;
+  flex:1;min-width:0;font:inherit;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 6px;
+  border:0;border-right:1px solid var(--line-2);background:transparent;color:var(--mut);cursor:pointer;
 }
 .seg button:last-child{border-right:0}
-.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
-.seg button:not([aria-pressed="true"]):hover{text-decoration:underline}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#000}
+.seg button:not([aria-pressed="true"]):hover{color:var(--fg)}
 .rng{display:flex;align-items:center;gap:12px}
-input[type=range]{flex:1;min-width:0;accent-color:var(--fg);height:28px}
-.val{width:4.2ch;text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:28px}
+.val{width:5.2ch;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent);font-size:12px}
 .hint{color:var(--mut);font-size:12px;margin:6px 0 0}
 
-.stage{background:#fff;border:2px solid var(--line);aspect-ratio:1;width:100%;max-width:100%;display:block}
+.stage{background:#fff;border:1px solid var(--line-2);aspect-ratio:1;width:100%;max-width:100%;display:block}
 .stage canvas{width:100%;height:100%;display:block}
 .status{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px;min-height:2.9em}
-.badge{flex:none;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border:2px solid var(--line)}
-.badge.ok{background:var(--fg);color:var(--bg)}
-.badge.warn{background:var(--bg);color:var(--fg);border-style:dashed}
+.badge{flex:none;font-weight:700;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--line-2)}
+.badge.ok{background:var(--accent);border-color:var(--accent);color:#000}
+.badge.warn{background:transparent;color:var(--mut);border-style:dashed}
 .meta{color:var(--mut);font-size:12px;margin-top:2px}
-.note{margin-top:34px;padding-top:14px;border-top:2px solid var(--line);color:var(--mut);font-size:12px;max-width:68ch}
-.top{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 16px}
-.top a{color:var(--mut);text-decoration:none;border-bottom:2px solid transparent;padding-bottom:2px}
-.top a:hover,.top a:focus-visible{color:var(--fg);border-color:var(--fg)}
+.note{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);color:var(--mut);font-size:11.5px;line-height:1.7;max-width:68ch}
+.top{margin:0 0 16px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.top a{
+  font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--fg);text-decoration:none;background:var(--panel);border:1px solid var(--line-2);padding:8px 14px;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.top a:hover,.top a:focus-visible{background:var(--accent);border-color:var(--accent);color:#000}
 @media (prefers-reduced-motion:no-preference){.btn,.seg button{transition:background .12s,color .12s}}
 </style>
 </head>
 <body>
 
 <div class="wrap">
-  <div class="top"><a href="../index.html">← panal</a></div>
+  <div class="top"><a href="../index.html">← panal</a><span class="lbl" style="margin:0;color:var(--dim)"><b style="color:var(--accent)">utils</b> / antarquía</span></div>
   <header>
     <svg class="logo" viewBox="0 0 100 100" aria-hidden="true" fill="none" stroke="currentColor">
       <circle cx="50" cy="50" r="44" stroke-width="7"/>
