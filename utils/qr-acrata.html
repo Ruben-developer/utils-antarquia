@@ -29,10 +29,21 @@ body{
 body::before{
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background-image:var(--hex),var(--hex);
-  background-size:72px 62px;background-position:0 0,36px 31px;opacity:.05;
+  background-size:72px 62px;background-position:0 0,36px 31px;opacity:.14;
 }
 header{display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:26px}
-.logo{width:clamp(46px,8vw,64px);height:auto;flex:none;color:var(--accent)}
+.hexico{
+  position:relative;flex:0 0 auto;width:58px;height:66px;
+  background:var(--accent);
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+  display:grid;place-items:center;
+}
+.hexico::before{
+  content:"";position:absolute;inset:2px;background:var(--panel);
+  clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+}
+.hexico .logo{position:relative;width:32px;height:32px;flex:none;color:var(--accent)}
+@media (max-width:760px){.hexico{width:48px;height:55px}.hexico .logo{width:27px;height:27px}}
 h1{font-family:var(--display);font-weight:900;font-size:clamp(30px,5.4vw,44px);line-height:1;letter-spacing:-.03em;text-transform:uppercase;margin:0;text-wrap:balance}
 header p{margin:8px 0 0;color:var(--mut);font-size:12px;line-height:1.5}
 
@@ -99,10 +110,12 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:28px}
 <div class="wrap">
   <div class="top"><a href="../index.html">← panal</a><span class="lbl" style="margin:0;color:var(--dim)"><b style="color:var(--accent)">utils</b> / antarquía</span></div>
   <header>
-    <svg class="logo" viewBox="0 0 100 100" aria-hidden="true" fill="none" stroke="currentColor">
-      <circle cx="50" cy="50" r="44" stroke-width="7"/>
-      <path d="M24 90 L50 14 L76 90 M33 63 H67" stroke-width="9" stroke-linecap="butt" stroke-linejoin="miter"/>
-    </svg>
+    <div class="hexico" aria-hidden="true">
+      <svg class="logo" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+        <circle cx="50" cy="50" r="44" stroke-width="7"/>
+        <path d="M24 90 L50 14 L76 90 M33 63 H67" stroke-width="9" stroke-linecap="butt" stroke-linejoin="miter"/>
+      </svg>
+    </div>
     <div>
       <h1>QR Acrata</h1>
       <p>Pega un link. El QR sale con la silueta de la Ⓐ, solo en blanco y negro.</p>

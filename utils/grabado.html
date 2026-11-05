@@ -70,7 +70,7 @@
     background-image: var(--hex), var(--hex);
     background-size: 72px 62px;
     background-position: 0 0, 36px 31px;
-    opacity: .05;
+    opacity: .14;
   }
   .wrap {
     position: relative; z-index: 1;
@@ -84,11 +84,34 @@
   header.top {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px 22px;
+    align-items: center;
+    gap: 14px 18px;
     padding-bottom: 18px;
     margin-bottom: 22px;
     border-bottom: 1px solid var(--line);
+  }
+  .headtxt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; min-width: 0; flex: 1 1 200px; }
+  .hexico {
+    position: relative;
+    flex: 0 0 auto;
+    width: 58px;
+    height: 66px;
+    background: var(--accent);
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    display: grid;
+    place-items: center;
+  }
+  .hexico::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    background: var(--panel);
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  }
+  .hexico span { position: relative; font-size: 23px; line-height: 1; }
+  @media (max-width: 760px) {
+    .hexico { width: 48px; height: 55px; }
+    .hexico span { font-size: 19px; }
   }
   h1 {
     margin: 0;
@@ -287,8 +310,11 @@
   </div>
 
   <header class="top">
-    <h1>Grabado Antiguo</h1>
-    <p>Sube una imagen y queda como una ilustración de periódico de 1890.</p>
+    <div class="hexico" aria-hidden="true"><span>🗞️</span></div>
+    <div class="headtxt">
+      <h1>Grabado Antiguo</h1>
+      <p>Sube una imagen y queda como una ilustración de periódico de 1890.</p>
+    </div>
   </header>
 
   <div class="layout">

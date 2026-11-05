@@ -43,7 +43,7 @@ body::before{
   background-image:var(--hex),var(--hex);
   background-size:72px 62px;
   background-position:0 0,36px 31px;
-  opacity:.05;
+  opacity:.14;
   pointer-events:none;
   z-index:0;
 }
