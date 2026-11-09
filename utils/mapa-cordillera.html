@@ -317,7 +317,7 @@
         <div class="checks" id="states"></div>
         <label class="check"><span class="left"><input type="checkbox" id="toggle-labels" checked> Etiquetas en el mapa</span></label>
         <label class="check"><span class="left"><input type="checkbox" id="toggle-bounds" checked> Límites comunales</span></label>
-        <p class="hint">Límites reales de OpenStreetMap, basados en datos de IDE Chile.</p>
+        <p class="hint">Límites comunales de OpenStreetMap (relaciones OSM, admin_level=8).</p>
       </section>
 
       <section class="block">
@@ -413,8 +413,8 @@ const STORAGE = 'mapa_cordillera_v1';
 const BASE_STORAGE = 'mapa_cordillera_base';
 const SAFE_STORAGE = 'mapa_cordillera_safe';
 
-/* Límites comunales reales: polígonos de OpenStreetMap (relaciones 224590 y 166571),
-   basados en los datos oficiales de IDE Chile. Simplificados a ~6 m para el mapa. */
+/* Límites comunales reales: polígonos de OpenStreetMap (relaciones 224590 y 166571,
+   admin_level=8). Simplificados a ~6 m para el mapa. */
 const BOUNDS = {
   laFlorida: [
     [-33.54654,-70.61481], [-33.56197,-70.61044], [-33.56219,-70.61255], [-33.57033,-70.61132],
@@ -1609,7 +1609,7 @@ $('#btn-print').addEventListener('click', () => {
   area.append(table);
   const foot = document.createElement('p');
   foot.className = 'pfoot';
-  foot.textContent = 'Datos guardados localmente en el navegador. Límites comunales: OpenStreetMap / IDE Chile. Mapa base: Esri / OpenStreetMap.';
+  foot.textContent = 'Datos guardados localmente en el navegador. Límites comunales: OpenStreetMap. Mapa base: Esri / OpenStreetMap.';
   area.append(foot);
   area.hidden = false;
   const cleanup = () => {
