@@ -198,7 +198,8 @@
 const CATS = {
   seg: { label:"seguridad", color:"#ffc800" },
   dat: { label:"datos",     color:"#8fd6c2" },
-  dis: { label:"diseño",    color:"#ff9d7a" }
+  dis: { label:"diseño",    color:"#ff9d7a" },
+  ter: { label:"territorio", color:"#9be37a" }
 };
 
 /* El orden importa: el panal se llena desde el centro hacia afuera,
@@ -217,7 +218,9 @@ const UTILS = [
   { name:"Colores",   icon:"🎨", href:"utils/colores.html",   cat:"dis", desc:"HEX ↔ RGB ↔ HSL" },
   { name:"Paleta",    icon:"🖌️", href:"utils/paleta.html",    cat:"dis", desc:"Constructor de paletas: guarda, extrae y copia colores" },
   { name:"QR Acrata", icon:"Ⓐ",  href:"utils/qr-acrata.html", cat:"dis", desc:"QR con la silueta Ⓐ · nivel H · PNG y SVG" },
-  { name:"Grabado",   icon:"🗞️", href:"utils/grabado.html",   cat:"dis", desc:"Convierte una imagen en un grabado de periódico de 1890" }
+  { name:"Grabado",   icon:"🗞️", href:"utils/grabado.html",   cat:"dis", desc:"Convierte una imagen en un grabado de periódico de 1890" },
+  /* territorio y geografía */
+  { name:"Mapa Cordillera", icon:"🗺️", href:"utils/mapa-cordillera.html", cat:"ter", desc:"Cartografía territorial: puntos, rutas, zonas y radios de apoyo mutuo" }
 ];
 
 const wrap = document.getElementById('wrap');
