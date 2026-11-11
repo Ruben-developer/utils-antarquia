@@ -19,6 +19,8 @@ Un panal de hexágonos. Cada celda es una herramienta.
 | Paleta | Constructor de paletas con estética de galería contemporánea: añade, aleatorio, extrae colores de un texto, guarda en `localStorage` y exporta CSS/JSON |
 | QR Acrata | QR nivel H con la silueta Ⓐ (círculo, A sola o negativa) dibujada por el tamaño de los módulos; grosor, puntos y detalle ajustables, verificación con jsQR y descarga PNG/SVG |
 | Grabado | Sube, arrastra o pega una imagen y queda como una ilustración de periódico de 1890: papel envejecido, tinta de imprenta, cinco paletas, «Otro papel», trama de líneas, cruzada o puntos, contorno y trazo irregular; compara con el original, copia la imagen, descarga el PNG o guárdala con clic derecho |
+| Mapa mental | Lienzo de ideas: nodos conceptuales, textos largos, preguntas y tareas, enlazados con etiquetas y flechas; varios mapas guardados, búsqueda, deshacer y exportación a JSON o Markdown |
+| Futbolito | Pizarra de alineación de 6 o 7 por lado: fichas negras editables con número o sigla, banca de 6 nombres, flechas de movimiento, ataque y defensa, exportación a PNG, SVG o JSON |
 
 ## Estructura
 
@@ -44,7 +46,9 @@ Un panal de hexágonos. Cada celda es una herramienta.
     ├── uuid.html
     ├── paleta.html       # constructor de paletas (estética galería)
     ├── qr-acrata.html    # QR con la Ⓐ dibujada por los módulos
-    └── grabado.html      # imagen → grabado de 1890 (canvas)
+    ├── grabado.html      # imagen → grabado de 1890 (canvas)
+    ├── mapa-mental.html  # lienzo de nodos y vínculos
+    └── futbolito.html    # pizarra de alineación
 ```
 
 Sin build, sin dependencias externas en runtime, sin frameworks. HTML + CSS + JS puro.

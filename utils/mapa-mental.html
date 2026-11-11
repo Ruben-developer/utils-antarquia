@@ -1,0 +1,1763 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa mental — Utils Antarquía</title>
+<meta name="description" content="Lienzo de ideas: crea nodos conceptuales, escribe textos largos, enlázalos con etiquetas y exporta el mapa en JSON o Markdown. Todo local.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 92,27 92,73 50,96 8,73 8,27' fill='%23ffc800'/%3E%3Cpolygon points='50,14 84,33 84,67 50,86 16,67 16,33' fill='%230a0a0a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../assets/tool.css">
+<style>
+  .wide{max-width:1480px}
+
+  .app{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 352px;
+    gap:14px;
+    height:calc(100dvh - 250px);
+    min-height:540px;
+  }
+
+  /* ---------- escenario ---------- */
+  .stage{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    background:#080806;
+    border:1px solid var(--line);
+  }
+  .stage:fullscreen{
+    width:100vw;height:100dvh;
+    border:0;background:#080806;
+  }
+  .toolbar{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+    padding:8px;
+    background:#0d0d0b;
+    border-bottom:1px solid var(--line);
+  }
+  .toolbar button{padding:7px 9px;font-size:9px;letter-spacing:.1em}
+  .toolbar button[aria-pressed="true"]{
+    background:var(--yellow);border-color:var(--yellow);color:#000;
+  }
+  .toolbar .sep{width:1px;height:22px;background:var(--line);flex:none;margin:0 2px}
+  .searchbox{flex:1 1 130px;min-width:110px;max-width:220px}
+  #search{
+    width:100%;padding:7px 10px;font-size:10px;letter-spacing:.06em;
+  }
+
+  #viewport{
+    position:relative;
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+    cursor:grab;
+    touch-action:none;
+    background-color:#080806;
+    background-image:radial-gradient(circle,#211d10 1px,transparent 1px);
+    background-size:24px 24px;
+  }
+  #viewport.panning{cursor:grabbing}
+  #viewport.link-mode{cursor:crosshair}
+  #viewport:focus-visible{outline:2px solid var(--yellow);outline-offset:-3px}
+
+  #world{
+    position:absolute;
+    left:0;top:0;
+    width:0;height:0;
+    transform-origin:0 0;
+  }
+  #edges{
+    position:absolute;
+    left:-6000px;top:-4000px;
+    width:12000px;height:8000px;
+    overflow:visible;
+  }
+  #nodes{position:absolute;left:0;top:0}
+
+  .canvas-hint{
+    position:absolute;left:12px;bottom:10px;
+    font-family:var(--mono);font-size:9px;letter-spacing:.09em;
+    text-transform:uppercase;color:#4f4a39;
+    pointer-events:none;
+  }
+
+  /* ---------- nodos ---------- */
+  .node{
+    position:absolute;
+    z-index:1;
+    background:#12120f;
+    border:1px solid #3a3423;
+    border-left:3px solid var(--nc,#ffc800);
+    padding:10px 12px 11px;
+    cursor:grab;
+    box-shadow:0 10px 26px rgba(0,0,0,.55);
+    transition:border-color .15s ease,box-shadow .15s ease;
+    touch-action:none;
+  }
+  .node:hover{border-color:#5b5236}
+  .node.sel{
+    border-color:#fff;
+    box-shadow:0 0 0 1px #fff,0 12px 32px rgba(0,0,0,.65);
+  }
+  .node.connect-src{box-shadow:0 0 0 2px #ffc800,0 0 26px rgba(255,200,0,.45)}
+  .node.hit{box-shadow:0 0 0 2px #ffc800,0 0 30px rgba(255,200,0,.35)}
+  .node.dim{opacity:.22}
+  .node-head{display:flex;gap:8px;align-items:flex-start}
+  .node-icon{
+    flex:none;width:12px;text-align:center;
+    font-family:var(--mono);font-size:12px;line-height:1.5;
+    color:var(--nc,#ffc800);
+  }
+  .node-title{
+    font-family:var(--mono);
+    font-size:11.5px;font-weight:700;letter-spacing:.04em;
+    line-height:1.45;text-transform:uppercase;
+    color:var(--text);word-break:break-word;
+  }
+  .node-title.untitled{
+    color:#5b5644;text-transform:none;font-weight:400;letter-spacing:0;
+  }
+  .t-note .node-title,.t-question .node-title{
+    text-transform:none;letter-spacing:0;font-size:12.5px;
+  }
+  .node-body{
+    margin-top:8px;
+    font-size:11.5px;line-height:1.6;
+    color:#c9c3ae;
+    white-space:pre-wrap;word-break:break-word;
+    max-height:190px;overflow:hidden;
+  }
+  .node.clamped .node-body{
+    -webkit-mask-image:linear-gradient(#000 72%,transparent);
+    mask-image:linear-gradient(#000 72%,transparent);
+  }
+  .t-question{border-style:dashed;border-left-style:solid}
+  .t-task.done .node-title{text-decoration:line-through;color:#7c7661}
+  .port{
+    position:absolute;right:-9px;top:50%;
+    transform:translateY(-50%);
+    width:16px;height:16px;padding:0;
+    border-radius:50%;
+    background:#0a0a0a;
+    border:2px solid #6b6350;
+    opacity:0;cursor:crosshair;
+    transition:opacity .15s ease,background .15s ease,border-color .15s ease;
+  }
+  .node:hover .port,.node.sel .port{opacity:1}
+  .port:hover,.port:focus-visible{background:var(--yellow);border-color:var(--yellow);outline:none}
+
+  /* ---------- inspector ---------- */
+  .side{overflow:auto;padding-right:2px;min-height:0}
+  .side .card{padding:14px 14px 16px}
+  .side .card + .card{margin-top:12px}
+  .side .card h2{margin-bottom:12px}
+  #node-body{min-height:120px}
+  .node-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .swatches{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+  .swatch{
+    width:22px;height:22px;padding:0;
+    border:1px solid #3d3522;
+    background:var(--c);
+    cursor:pointer;
+  }
+  .swatch[aria-pressed="true"]{outline:2px solid #fff;outline-offset:2px}
+  .check{
+    display:flex;align-items:center;gap:8px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);margin-top:12px;cursor:pointer;
+  }
+  .check[hidden]{display:none}
+  .check input{accent-color:var(--yellow);width:14px;height:14px}
+  .posline{
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;
+    color:#5f5a47;margin-top:10px;
+  }
+  .tips{
+    list-style:none;
+    font-family:var(--mono);font-size:10.5px;line-height:1.95;
+    color:#6b6654;
+  }
+  .tips b{color:var(--yellow-soft);font-weight:700}
+  .stats{
+    margin-top:12px;padding-top:10px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--dim);
+  }
+
+  /* ---------- trazados ---------- */
+  .edge-line{fill:none;stroke:#5a5546;stroke-width:2;stroke-linecap:round}
+  .edge-line.sel{stroke:#ffc800;stroke-width:3}
+  .edge-hit{fill:none;stroke:transparent;stroke-width:18;pointer-events:stroke;cursor:pointer}
+  .edge-label{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;
+    fill:#d8d2bd;paint-order:stroke;stroke:#0a0a0a;stroke-width:4;
+    stroke-linejoin:round;pointer-events:none;text-transform:uppercase;
+  }
+
+  @media (max-width:1000px){
+    .app{grid-template-columns:1fr;height:auto}
+    .stage{height:min(70dvh,680px)}
+    .side{overflow:visible;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+    .side .card + .card{margin-top:0}
+  }
+  @media (max-width:700px){
+    .side{grid-template-columns:1fr}
+    .stage{height:min(66dvh,600px)}
+    .toolbar .searchbox{flex-basis:100%;max-width:none;order:9}
+    .toolbar .sep{display:none}
+    .canvas-hint{font-size:8px;max-width:70%}
+  }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <a class="back" href="../index.html">← panal</a>
+  <div class="brand"><b>utils</b> / antarquía</div>
+</nav>
+
+<main class="wide">
+  <div class="head">
+    <div class="hexico"><span>🕸️</span></div>
+    <div>
+      <h1>Mapa mental</h1>
+      <p class="sub">Nodos, textos largos y vínculos · todo se guarda en este navegador</p>
+    </div>
+  </div>
+
+  <div class="app">
+    <section class="stage" id="stage" aria-label="Lienzo del mapa mental">
+      <div class="toolbar">
+        <button type="button" id="btn-add-concept" title="Nuevo concepto (N)">+ Concepto</button>
+        <button type="button" id="btn-add-note" title="Nuevo texto (T)">+ Texto</button>
+        <button type="button" id="btn-add-question" title="Nueva pregunta">? Pregunta</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" id="btn-link" aria-pressed="false" title="Conectar nodos (L)">⇄ Conectar</button>
+        <div class="searchbox">
+          <input type="search" id="search" placeholder="buscar…" aria-label="Buscar en el mapa" autocomplete="off">
+        </div>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" id="btn-zoom-out" aria-label="Alejar" title="Alejar">−</button>
+        <button type="button" id="btn-zoom-label" class="ghost" title="Volver al 100%">100%</button>
+        <button type="button" id="btn-zoom-in" aria-label="Acercar" title="Acercar">+</button>
+        <button type="button" id="btn-fit" title="Ajustar todo el mapa (F)">Ajustar</button>
+        <button type="button" id="btn-full" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" id="btn-undo" title="Deshacer (Ctrl+Z)">↶</button>
+        <button type="button" id="btn-redo" title="Rehacer (Ctrl+Shift+Z)">↷</button>
+      </div>
+
+      <div id="viewport" role="application" aria-label="Lienzo: doble clic para crear un nodo, arrastra para moverte, rueda para hacer zoom" tabindex="0">
+        <div id="world">
+          <svg id="edges" viewBox="-6000 -4000 12000 8000" aria-hidden="true"></svg>
+          <div id="nodes"></div>
+        </div>
+        <div class="canvas-hint" id="canvas-hint">doble clic: crear · arrastra: mover · rueda: zoom</div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card">
+        <h2>Mapa</h2>
+        <label class="lbl" for="board-name">Nombre</label>
+        <input type="text" id="board-name" maxlength="80" autocomplete="off" placeholder="Mapa sin título">
+        <label class="lbl" for="board-select" style="margin-top:12px">Mapas guardados</label>
+        <select id="board-select"></select>
+        <div class="row">
+          <button type="button" id="btn-new-board">Nuevo</button>
+          <button type="button" id="btn-dup-board">Duplicar</button>
+          <button type="button" class="ghost" id="btn-del-board">Borrar</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Inspector</h2>
+
+        <div id="empty-panel">
+          <ul class="tips">
+            <li><b>doble clic</b> en el lienzo crea un concepto</li>
+            <li><b>N</b> concepto · <b>T</b> texto · <b>L</b> conectar</li>
+            <li>arrastra el <b>punto</b> del borde derecho para enlazar</li>
+            <li><b>shift + clic</b> selecciona varios nodos</li>
+            <li><b>supr</b> borra · <b>Ctrl+Z</b> deshace</li>
+          </ul>
+          <p class="stats" id="stats">0 nodos · 0 vínculos</p>
+        </div>
+
+        <div id="node-panel" hidden>
+          <label class="lbl" for="node-title">Título</label>
+          <input type="text" id="node-title" maxlength="200" autocomplete="off" placeholder="Idea, concepto, pregunta…">
+          <label class="lbl" for="node-body" style="margin-top:10px">Texto</label>
+          <textarea id="node-body" maxlength="8000" placeholder="Desarrolla la idea, pega un texto largo, escribe una cita…"></textarea>
+          <label class="lbl" for="node-type" style="margin-top:12px">Tipo</label>
+          <select id="node-type">
+            <option value="concept">Concepto</option>
+            <option value="note">Texto</option>
+            <option value="question">Pregunta</option>
+            <option value="task">Tarea</option>
+          </select>
+          <label class="check" id="done-row" hidden>
+            <input type="checkbox" id="node-done"> hecha
+          </label>
+          <span class="lbl" style="margin-top:12px;display:block">Color</span>
+          <div class="swatches" id="node-colors" role="group" aria-label="Color del nodo"></div>
+          <p class="posline" id="node-pos"></p>
+          <div class="row">
+            <button type="button" id="btn-connect-from">Conectar…</button>
+            <button type="button" id="btn-dup-node">Duplicar</button>
+            <button type="button" class="ghost" id="btn-del-node">Eliminar</button>
+          </div>
+        </div>
+
+        <div id="edge-panel" hidden>
+          <label class="lbl" for="edge-label">Etiqueta del vínculo</label>
+          <input type="text" id="edge-label" maxlength="120" autocomplete="off" placeholder="causa, ejemplo, depende de…">
+          <div class="node-grid">
+            <div>
+              <label class="lbl" for="edge-dir">Dirección</label>
+              <select id="edge-dir">
+                <option value="one">→ con flecha</option>
+                <option value="both">↔ ambas</option>
+                <option value="none">— sin flecha</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl" for="edge-style">Trazo</label>
+              <select id="edge-style">
+                <option value="solid">Sólido</option>
+                <option value="dashed">Punteado</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <button type="button" class="ghost" id="btn-del-edge">Eliminar vínculo</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Datos</h2>
+        <div class="row">
+          <button type="button" id="btn-export">JSON</button>
+          <button type="button" id="btn-export-md">Markdown</button>
+          <button type="button" id="btn-copy-md">Copiar esquema</button>
+        </div>
+        <div class="row">
+          <button type="button" id="btn-import">Importar</button>
+          <input type="file" id="file" accept=".json,application/json" hidden>
+          <button type="button" class="ghost" id="btn-clear">Vaciar mapa</button>
+        </div>
+        <p class="hint">Nada sale de este navegador. Exporta el JSON para conservar o mover un mapa.</p>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<footer><a href="../index.html">utils.antarquia.cl</a></footer>
+
+<script src="../assets/tool.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  /* ============================================================
+     Modelo
+     ============================================================ */
+  const STORE = 'antarquia_mapa_mental_v1';
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const TYPES = {
+    concept:  { icon: '◆', label: 'Concepto', w: 220, ph: 'nueva idea' },
+    note:     { icon: '▤', label: 'Texto',    w: 270, ph: 'nota' },
+    question: { icon: '?', label: 'Pregunta', w: 230, ph: 'pregunta' },
+    task:     { icon: '✓', label: 'Tarea',    w: 230, ph: 'tarea' }
+  };
+
+  const COLORS = [
+    ['yellow', '#ffc800'],
+    ['teal',   '#8fd6c2'],
+    ['coral',  '#ff9d7a'],
+    ['green',  '#9be37a'],
+    ['blue',   '#7fb2ff'],
+    ['paper',  '#f4f1e6']
+  ];
+
+  const DEFAULT_COLOR = { concept: 'yellow', note: 'teal', question: 'coral', task: 'green' };
+
+  function uid(prefix) {
+    return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function safeId(value, prefix) {
+    return (typeof value === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(value))
+      ? value
+      : uid(prefix);
+  }
+
+  function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+  function normalizeNode(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const type = TYPES[raw.type] ? raw.type : 'concept';
+    return {
+      id: safeId(raw.id, 'n'),
+      type,
+      x: Number.isFinite(raw.x) ? raw.x : 0,
+      y: Number.isFinite(raw.y) ? raw.y : 0,
+      title: String(raw.title == null ? '' : raw.title).slice(0, 200),
+      body: String(raw.body == null ? '' : raw.body).slice(0, 8000),
+      color: COLORS.some(c => c[0] === raw.color) ? raw.color : DEFAULT_COLOR[type],
+      done: !!raw.done
+    };
+  }
+
+  function normalizeEdge(raw, ids) {
+    if (!raw || typeof raw !== 'object') return null;
+    if (!ids.has(raw.from) || !ids.has(raw.to) || raw.from === raw.to) return null;
+    return {
+      id: safeId(raw.id, 'e'),
+      from: raw.from,
+      to: raw.to,
+      label: String(raw.label == null ? '' : raw.label).slice(0, 120),
+      dir: ['one', 'both', 'none'].includes(raw.dir) ? raw.dir : 'one',
+      style: raw.style === 'dashed' ? 'dashed' : 'solid'
+    };
+  }
+
+  function normalizeBoard(raw) {
+    const board = {
+      id: safeId(raw && raw.id, 'b'),
+      name: String((raw && raw.name) || 'Mapa sin título').slice(0, 80) || 'Mapa sin título',
+      nodes: [],
+      edges: [],
+      view: null
+    };
+    const seenNodes = new Set();
+    const source = raw && Array.isArray(raw.nodes) ? raw.nodes.slice(0, 600) : [];
+    source.forEach(item => {
+      const node = normalizeNode(item);
+      if (!node) return;
+      if (seenNodes.has(node.id)) node.id = uid('n');
+      seenNodes.add(node.id);
+      board.nodes.push(node);
+    });
+
+    const ids = new Set(board.nodes.map(n => n.id));
+    const seenEdges = new Set();
+    const rawEdges = raw && Array.isArray(raw.edges) ? raw.edges.slice(0, 1600) : [];
+    rawEdges.forEach(item => {
+      const edge = normalizeEdge(item, ids);
+      if (!edge) return;
+      if (seenEdges.has(edge.id)) edge.id = uid('e');
+      seenEdges.add(edge.id);
+      board.edges.push(edge);
+    });
+
+    if (raw && raw.view && Number.isFinite(raw.view.x) && Number.isFinite(raw.view.y) && Number.isFinite(raw.view.k)) {
+      board.view = { x: raw.view.x, y: raw.view.y, k: clamp(raw.view.k, 0.15, 2.5) };
+    }
+    return board;
+  }
+
+  function emptyBoard(name) {
+    return { id: uid('b'), name: name || 'Mapa sin título', nodes: [], edges: [], view: null };
+  }
+
+  function loadStore() {
+    let raw = null;
+    try { raw = JSON.parse(localStorage.getItem(STORE)); } catch (e) { raw = null; }
+    const store = { v: 1, current: null, boards: [] };
+    if (raw && Array.isArray(raw.boards)) {
+      const seen = new Set();
+      raw.boards.slice(0, 40).forEach(item => {
+        const board = normalizeBoard(item);
+        if (seen.has(board.id)) board.id = uid('b');
+        seen.add(board.id);
+        store.boards.push(board);
+      });
+      if (typeof raw.current === 'string') store.current = raw.current;
+    }
+    if (!store.boards.length) store.boards.push(emptyBoard('Mapa 1'));
+    if (!store.boards.some(b => b.id === store.current)) store.current = store.boards[0].id;
+    return store;
+  }
+
+  /* ============================================================
+     Estado
+     ============================================================ */
+  const store = loadStore();
+  let view = { x: 0, y: 0, k: 1 };
+  let selNodes = new Set();
+  let selEdge = null;
+  let connectMode = false;
+  let connectFrom = null;
+  let linkDrag = null;
+  let query = '';
+  let sizes = new Map();
+  let history = [];
+  let future = [];
+  let saveTimer = 0;
+  let editSnap = null;
+  let boardUiKey = '';
+  let lastInspectorKey = '';
+  let moveStamp = 0;
+
+  const $vp = $('#viewport');
+  const $world = $('#world');
+  const $nodes = $('#nodes');
+  const $edges = $('#edges');
+
+  function cur() {
+    return store.boards.find(b => b.id === store.current) || store.boards[0];
+  }
+
+  function nodeById(id) {
+    return cur().nodes.find(n => n.id === id) || null;
+  }
+
+  function edgeById(id) {
+    return cur().edges.find(e => e.id === id) || null;
+  }
+
+  function singleNode() {
+    if (selNodes.size !== 1) return null;
+    return nodeById([...selNodes][0]);
+  }
+
+  function nodeEl(id) {
+    return $nodes.querySelector('.node[data-id="' + id + '"]');
+  }
+
+  /* ============================================================
+     Guardado e historial
+     ============================================================ */
+  function saveNow() {
+    const board = cur();
+    board.view = { x: view.x, y: view.y, k: view.k };
+    clearTimeout(saveTimer);
+    try {
+      localStorage.setItem(STORE, JSON.stringify(store));
+    } catch (e) {
+      toast('No se pudo guardar en este navegador');
+    }
+  }
+
+  function saveSoon() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveNow, 400);
+  }
+
+  function snapshot() {
+    return JSON.stringify({ nodes: cur().nodes, edges: cur().edges });
+  }
+
+  function record(snap) {
+    history.push(snap);
+    if (history.length > 80) history.shift();
+    future.length = 0;
+    updateUndo();
+  }
+
+  function pushHistory() { record(snapshot()); }
+
+  function updateUndo() {
+    $('#btn-undo').disabled = history.length === 0;
+    $('#btn-redo').disabled = future.length === 0;
+  }
+
+  function restore(json) {
+    const data = JSON.parse(json);
+    cur().nodes = data.nodes;
+    cur().edges = data.edges;
+    pruneSelection();
+    lastInspectorKey = '';
+    render();
+    saveSoon();
+    updateUndo();
+  }
+
+  function undo() {
+    if (!history.length) return;
+    future.push(snapshot());
+    restore(history.pop());
+  }
+
+  function redo() {
+    if (!future.length) return;
+    history.push(snapshot());
+    restore(future.pop());
+  }
+
+  function beginEdit() {
+    if (!editSnap) editSnap = snapshot();
+  }
+
+  function endEdit() {
+    if (!editSnap) return;
+    const after = snapshot();
+    if (after !== editSnap) record(editSnap);
+    editSnap = null;
+  }
+
+  function pruneSelection() {
+    const ids = new Set(cur().nodes.map(n => n.id));
+    selNodes = new Set([...selNodes].filter(id => ids.has(id)));
+    if (selEdge && !cur().edges.some(e => e.id === selEdge)) selEdge = null;
+  }
+
+  /* ============================================================
+     Vista: pan y zoom
+     ============================================================ */
+  function applyView() {
+    $world.style.transform = 'translate(' + view.x + 'px,' + view.y + 'px) scale(' + view.k + ')';
+    $('#btn-zoom-label').textContent = Math.round(view.k * 100) + '%';
+    $vp.style.backgroundSize = (24 * view.k) + 'px ' + (24 * view.k) + 'px';
+    $vp.style.backgroundPosition = view.x + 'px ' + view.y + 'px';
+  }
+
+  function toWorld(clientX, clientY) {
+    const rect = $vp.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - view.x) / view.k,
+      y: (clientY - rect.top - view.y) / view.k
+    };
+  }
+
+  function zoomAt(factor, sx, sy) {
+    const next = clamp(view.k * factor, 0.15, 2.5);
+    view.x = sx - (sx - view.x) * (next / view.k);
+    view.y = sy - (sy - view.y) * (next / view.k);
+    view.k = next;
+    applyView();
+    saveSoon();
+  }
+
+  function fitView() {
+    const vw = $vp.clientWidth;
+    const vh = $vp.clientHeight;
+    const nodes = cur().nodes;
+    if (!nodes.length) {
+      view = { x: vw / 2, y: vh / 2, k: 1 };
+      applyView();
+      saveSoon();
+      return;
+    }
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach(node => {
+      const size = sizes.get(node.id) || { w: TYPES[node.type].w, h: 80 };
+      minX = Math.min(minX, node.x);
+      minY = Math.min(minY, node.y);
+      maxX = Math.max(maxX, node.x + size.w);
+      maxY = Math.max(maxY, node.y + size.h);
+    });
+    const pad = 70;
+    const minK = vw < 700 ? 0.35 : 0.15;
+    const k = clamp(Math.min(
+      (vw - pad * 2) / Math.max(1, maxX - minX),
+      (vh - pad * 2) / Math.max(1, maxY - minY)
+    ), minK, 1.2);
+    view.k = k;
+    view.x = vw / 2 - (minX + maxX) / 2 * k;
+    view.y = vh / 2 - (minY + maxY) / 2 * k;
+    applyView();
+    saveSoon();
+  }
+
+  function centerOn(node) {
+    const size = sizes.get(node.id) || { w: TYPES[node.type].w, h: 80 };
+    view.x = $vp.clientWidth / 2 - (node.x + size.w / 2) * view.k;
+    view.y = $vp.clientHeight / 2 - (node.y + size.h / 2) * view.k;
+    applyView();
+    saveSoon();
+  }
+
+  /* ============================================================
+     Render: nodos
+     ============================================================ */
+  function renderNodes() {
+    $nodes.innerHTML = '';
+    sizes.clear();
+    const q = query.trim().toLowerCase();
+
+    cur().nodes.forEach(node => {
+      const type = TYPES[node.type];
+      const el = document.createElement('div');
+      el.className = 'node t-' + node.type + ' c-' + node.color;
+      el.dataset.id = node.id;
+      el.style.left = node.x + 'px';
+      el.style.top = node.y + 'px';
+      el.style.width = type.w + 'px';
+      el.style.setProperty('--nc', colorOf(node.color));
+      el.tabIndex = 0;
+      el.setAttribute('role', 'group');
+      el.setAttribute('aria-label', 'Nodo: ' + (node.title.trim() || type.ph));
+
+      if (selNodes.has(node.id)) el.classList.add('sel');
+      if (connectFrom === node.id) el.classList.add('connect-src');
+      if (node.type === 'task' && node.done) el.classList.add('done');
+      if (q) el.classList.add((node.title + ' ' + node.body).toLowerCase().includes(q) ? 'hit' : 'dim');
+
+      const head = document.createElement('div');
+      head.className = 'node-head';
+
+      const icon = document.createElement('span');
+      icon.className = 'node-icon';
+      icon.textContent = node.type === 'task' && node.done ? '✓' : type.icon;
+      head.appendChild(icon);
+
+      const title = document.createElement('span');
+      title.className = 'node-title';
+      title.textContent = node.title.trim() || type.ph;
+      if (!node.title.trim()) title.classList.add('untitled');
+      head.appendChild(title);
+      el.appendChild(head);
+
+      if (node.body.trim()) {
+        const body = document.createElement('div');
+        body.className = 'node-body';
+        body.textContent = node.body;
+        el.appendChild(body);
+      }
+
+      const port = document.createElement('button');
+      port.type = 'button';
+      port.className = 'port';
+      port.title = 'Arrastra hasta otro nodo para conectarlos';
+      port.setAttribute('aria-label', 'Conectar desde ' + (node.title.trim() || 'este nodo'));
+      port.addEventListener('pointerdown', ev => startLinkDrag(ev, node.id));
+      el.appendChild(port);
+
+      el.addEventListener('pointerdown', ev => startNodeDrag(ev, node.id));
+      el.addEventListener('dblclick', ev => {
+        ev.stopPropagation();
+        selectNode(node.id);
+        $('#node-title').focus();
+        $('#node-title').select();
+      });
+      el.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          selectNode(node.id);
+          $('#node-title').focus();
+        }
+      });
+
+      $nodes.appendChild(el);
+
+      sizes.set(node.id, { w: el.offsetWidth, h: el.offsetHeight });
+      const bodyEl = el.querySelector('.node-body');
+      if (bodyEl && bodyEl.scrollHeight > bodyEl.clientHeight + 2) el.classList.add('clamped');
+    });
+  }
+
+  function colorOf(name) {
+    const found = COLORS.find(c => c[0] === name);
+    return found ? found[1] : COLORS[0][1];
+  }
+
+  /* ============================================================
+     Render: vínculos
+     ============================================================ */
+  function rectAnchor(node, size, toward) {
+    const cx = node.x + size.w / 2;
+    const cy = node.y + size.h / 2;
+    const dx = toward.x - cx;
+    const dy = toward.y - cy;
+    if (!dx && !dy) return { x: cx, y: cy };
+    const tx = dx ? (size.w / 2 + 5) / Math.abs(dx) : Infinity;
+    const ty = dy ? (size.h / 2 + 5) / Math.abs(dy) : Infinity;
+    const t = Math.min(tx, ty);
+    return { x: cx + dx * t, y: cy + dy * t };
+  }
+
+  function arrowPolygon(tip, from, size) {
+    const angle = Math.atan2(tip.y - from.y, tip.x - from.x);
+    const a = { x: tip.x - size * Math.cos(angle - 0.42), y: tip.y - size * Math.sin(angle - 0.42) };
+    const b = { x: tip.x - size * Math.cos(angle + 0.42), y: tip.y - size * Math.sin(angle + 0.42) };
+    return tip.x + ',' + tip.y + ' ' + a.x + ',' + a.y + ' ' + b.x + ',' + b.y;
+  }
+
+  function svgEl(tag, attrs, parent) {
+    const el = document.createElementNS(NS, tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(key => el.setAttribute(key, attrs[key]));
+    }
+    if (parent) parent.appendChild(el);
+    return el;
+  }
+
+  function renderEdges() {
+    $edges.innerHTML = '';
+
+    cur().edges.forEach(edge => {
+      const from = nodeById(edge.from);
+      const to = nodeById(edge.to);
+      if (!from || !to) return;
+
+      const sf = sizes.get(from.id) || { w: TYPES[from.type].w, h: 80 };
+      const st = sizes.get(to.id) || { w: TYPES[to.type].w, h: 80 };
+      const cf = { x: from.x + sf.w / 2, y: from.y + sf.h / 2 };
+      const ct = { x: to.x + st.w / 2, y: to.y + st.h / 2 };
+      const start = rectAnchor(from, sf, ct);
+      const end = rectAnchor(to, st, cf);
+      const selected = selEdge === edge.id;
+      const color = selected ? '#ffc800' : '#5a5546';
+      const d = 'M' + start.x + ' ' + start.y + ' L' + end.x + ' ' + end.y;
+
+      const g = svgEl('g', null, $edges);
+
+      const line = svgEl('path', {
+        d,
+        class: 'edge-line' + (selected ? ' sel' : ''),
+        stroke: color,
+        'stroke-width': selected ? 3 : 2
+      }, g);
+      if (edge.style === 'dashed') line.setAttribute('stroke-dasharray', '7 7');
+
+      if (edge.dir === 'one' || edge.dir === 'both') {
+        svgEl('polygon', {
+          points: arrowPolygon(end, start, selected ? 11 : 9),
+          fill: color
+        }, g);
+      }
+      if (edge.dir === 'both') {
+        svgEl('polygon', {
+          points: arrowPolygon(start, end, selected ? 11 : 9),
+          fill: color
+        }, g);
+      }
+
+      if (edge.label.trim()) {
+        const mx = (start.x + end.x) / 2;
+        const my = (start.y + end.y) / 2;
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const ox = (-dy / len) * 13;
+        const oy = (dx / len) * 13;
+        const text = svgEl('text', {
+          x: mx + ox,
+          y: my + oy,
+          class: 'edge-label',
+          'text-anchor': 'middle',
+          'dominant-baseline': 'middle'
+        }, g);
+        text.textContent = edge.label;
+      }
+
+      svgEl('path', {
+        d,
+        class: 'edge-hit',
+        'data-id': edge.id
+      }, g);
+    });
+
+    if (linkDrag) {
+      const from = nodeById(linkDrag.from);
+      if (from) {
+        const sf = sizes.get(from.id) || { w: TYPES[from.type].w, h: 80 };
+        const start = rectAnchor(from, sf, { x: linkDrag.x, y: linkDrag.y });
+        const d = 'M' + start.x + ' ' + start.y + ' L' + linkDrag.x + ' ' + linkDrag.y;
+        svgEl('path', {
+          d,
+          fill: 'none',
+          stroke: '#ffc800',
+          'stroke-width': 2,
+          'stroke-dasharray': '6 6',
+          'stroke-linecap': 'round'
+        }, $edges);
+      }
+    }
+  }
+
+  /* ============================================================
+     Render: inspector y barra lateral
+     ============================================================ */
+  function renderInspector() {
+    const node = singleNode();
+    const edge = selEdge ? edgeById(selEdge) : null;
+    const key = node ? 'n:' + node.id : (edge ? 'e:' + edge.id : 'empty');
+
+    $('#node-panel').hidden = !node;
+    $('#edge-panel').hidden = !edge;
+    $('#empty-panel').hidden = !!(node || edge);
+
+    if (node) {
+      if (lastInspectorKey !== key) {
+        $('#node-title').value = node.title;
+        $('#node-body').value = node.body;
+        $('#node-type').value = node.type;
+        $('#node-done').checked = !!node.done;
+      }
+      $('#done-row').hidden = node.type !== 'task';
+      $('#node-pos').textContent = 'posición ' + Math.round(node.x) + ' / ' + Math.round(node.y) + ' · ' + TYPES[node.type].label.toLowerCase();
+      $$('#node-colors .swatch').forEach(btn => {
+        btn.setAttribute('aria-pressed', String(btn.dataset.color === node.color));
+      });
+    }
+
+    if (edge) {
+      if (lastInspectorKey !== key) {
+        $('#edge-label').value = edge.label;
+        $('#edge-dir').value = edge.dir;
+        $('#edge-style').value = edge.style;
+      }
+    }
+
+    $('#stats').textContent = [
+      cur().nodes.length + (cur().nodes.length === 1 ? ' nodo' : ' nodos'),
+      cur().edges.length + (cur().edges.length === 1 ? ' vínculo' : ' vínculos'),
+      store.boards.length + (store.boards.length === 1 ? ' mapa' : ' mapas')
+    ].join(' · ');
+    lastInspectorKey = key;
+  }
+
+  function renderBoardUI() {
+    const key = store.current + '|' + store.boards.map(b => b.id + ':' + b.name).join('|');
+    if (key === boardUiKey) return;
+    boardUiKey = key;
+
+    const select = $('#board-select');
+    select.innerHTML = '';
+    store.boards.forEach(board => {
+      const option = document.createElement('option');
+      option.value = board.id;
+      option.textContent = board.name;
+      select.appendChild(option);
+    });
+    select.value = store.current;
+
+    if (document.activeElement !== $('#board-name')) {
+      $('#board-name').value = cur().name;
+    }
+  }
+
+  function render() {
+    renderNodes();
+    renderEdges();
+    renderInspector();
+    renderBoardUI();
+    updateUndo();
+  }
+
+  /* ============================================================
+     Selección
+     ============================================================ */
+  function selectNode(id, additive) {
+    if (additive) {
+      if (selNodes.has(id)) selNodes.delete(id);
+      else selNodes.add(id);
+    } else {
+      selNodes = new Set([id]);
+    }
+    selEdge = null;
+    render();
+  }
+
+  function selectEdge(id) {
+    selEdge = id;
+    selNodes.clear();
+    render();
+  }
+
+  function clearSelection() {
+    selNodes.clear();
+    selEdge = null;
+    connectFrom = null;
+    render();
+  }
+
+  /* ============================================================
+     Nodos: crear, mover, editar
+     ============================================================ */
+  function createNode(type, wx, wy) {
+    const cfg = TYPES[type];
+    pushHistory();
+    const node = {
+      id: uid('n'),
+      type,
+      x: Math.round(wx - cfg.w / 2),
+      y: Math.round(wy - 30),
+      title: '',
+      body: '',
+      color: DEFAULT_COLOR[type],
+      done: false
+    };
+    cur().nodes.push(node);
+    selNodes = new Set([node.id]);
+    selEdge = null;
+    render();
+    saveSoon();
+    $('#node-title').focus();
+  }
+
+  function addNodeAtCenter(type) {
+    const rect = $vp.getBoundingClientRect();
+    const point = toWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    const width = TYPES[type].w;
+    const height = 76;
+    const margin = 18;
+
+    const collides = (x, y) => cur().nodes.some(node => {
+      const size = sizes.get(node.id) || { w: TYPES[node.type].w, h: 80 };
+      return x < node.x + size.w + margin &&
+        x + width + margin > node.x &&
+        y < node.y + size.h + margin &&
+        y + height + margin > node.y;
+    });
+
+    let x = point.x - width / 2;
+    let y = point.y - 30;
+    let step = 0;
+    while (collides(x, y) && step < 220) {
+      step += 1;
+      const angle = step * 0.9;
+      const radius = 46 + step * 20;
+      x = point.x - width / 2 + Math.cos(angle) * radius;
+      y = point.y - 30 + Math.sin(angle) * radius;
+    }
+    createNode(type, x + width / 2, y + 30);
+  }
+
+  function refreshNodeDom(node) {
+    const el = nodeEl(node.id);
+    if (!el) { render(); return; }
+    const title = el.querySelector('.node-title');
+    title.textContent = node.title.trim() || TYPES[node.type].ph;
+    title.classList.toggle('untitled', !node.title.trim());
+    el.setAttribute('aria-label', 'Nodo: ' + (node.title.trim() || TYPES[node.type].ph));
+
+    let body = el.querySelector('.node-body');
+    if (node.body.trim()) {
+      if (!body) {
+        body = document.createElement('div');
+        body.className = 'node-body';
+        el.appendChild(body);
+      }
+      body.textContent = node.body;
+    } else if (body) {
+      body.remove();
+    }
+    el.classList.remove('clamped');
+    sizes.set(node.id, { w: el.offsetWidth, h: el.offsetHeight });
+    const bodyEl = el.querySelector('.node-body');
+    if (bodyEl && bodyEl.scrollHeight > bodyEl.clientHeight + 2) el.classList.add('clamped');
+    renderEdges();
+    saveSoon();
+  }
+
+  function startNodeDrag(ev, id) {
+    if (ev.button !== 0) return;
+    if (ev.target.closest('.port')) return;
+    ev.stopPropagation();
+
+    if (connectMode) {
+      ev.preventDefault();
+      handleConnectClick(id);
+      return;
+    }
+
+    if (ev.shiftKey) {
+      ev.preventDefault();
+      selectNode(id, true);
+      return;
+    }
+
+    if (!selNodes.has(id)) {
+      selNodes = new Set([id]);
+      selEdge = null;
+      render();
+    }
+
+    const before = snapshot();
+    const start = { x: ev.clientX, y: ev.clientY };
+    const positions = new Map();
+    selNodes.forEach(nid => {
+      const node = nodeById(nid);
+      if (node) positions.set(nid, { x: node.x, y: node.y });
+    });
+    let moved = false;
+
+    const onMove = e => {
+      const dx = (e.clientX - start.x) / view.k;
+      const dy = (e.clientY - start.y) / view.k;
+      if (!moved) {
+        if (Math.hypot(e.clientX - start.x, e.clientY - start.y) < 3) return;
+        moved = true;
+      }
+      positions.forEach((origin, nid) => {
+        const node = nodeById(nid);
+        const el = nodeEl(nid);
+        if (!node || !el) return;
+        node.x = Math.round(origin.x + dx);
+        node.y = Math.round(origin.y + dy);
+        el.style.left = node.x + 'px';
+        el.style.top = node.y + 'px';
+      });
+      renderEdges();
+    };
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      if (moved) {
+        record(before);
+        saveSoon();
+        renderInspector();
+      }
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  function handleConnectClick(id) {
+    if (!connectFrom) {
+      connectFrom = id;
+      render();
+      toast('ahora toca el nodo destino');
+      return;
+    }
+    if (connectFrom === id) {
+      connectFrom = null;
+      render();
+      return;
+    }
+    addEdge(connectFrom, id);
+    connectFrom = null;
+    render();
+  }
+
+  function startLinkDrag(ev, id) {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const point = toWorld(ev.clientX, ev.clientY);
+    linkDrag = { from: id, x: point.x, y: point.y };
+
+    const onMove = e => {
+      const p = toWorld(e.clientX, e.clientY);
+      linkDrag.x = p.x;
+      linkDrag.y = p.y;
+      renderEdges();
+    };
+    const onUp = e => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      const target = under && under.closest ? under.closest('.node') : null;
+      const from = linkDrag.from;
+      const targetId = target ? target.dataset.id : null;
+      linkDrag = null;
+      if (targetId && targetId !== from) {
+        addEdge(from, targetId);
+        render();
+      } else {
+        renderEdges();
+      }
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  function addEdge(from, to) {
+    if (from === to || !nodeById(from) || !nodeById(to)) return;
+    if (cur().edges.some(e => e.from === from && e.to === to)) {
+      toast('ese vínculo ya existe');
+      return;
+    }
+    pushHistory();
+    const edge = { id: uid('e'), from, to, label: '', dir: 'one', style: 'solid' };
+    cur().edges.push(edge);
+    selEdge = edge.id;
+    selNodes.clear();
+    saveSoon();
+    toast('vínculo creado');
+  }
+
+  function deleteSelection() {
+    if (selEdge) {
+      pushHistory();
+      cur().edges = cur().edges.filter(e => e.id !== selEdge);
+      selEdge = null;
+      render();
+      saveSoon();
+      return;
+    }
+    if (!selNodes.size) return;
+    const ids = new Set(selNodes);
+    pushHistory();
+    cur().nodes = cur().nodes.filter(n => !ids.has(n.id));
+    cur().edges = cur().edges.filter(e => !ids.has(e.from) && !ids.has(e.to));
+    selNodes.clear();
+    render();
+    saveSoon();
+  }
+
+  function duplicateSelection() {
+    if (!selNodes.size) return;
+    pushHistory();
+    const map = new Map();
+    const copies = [];
+    selNodes.forEach(id => {
+      const node = nodeById(id);
+      if (!node) return;
+      const copy = { ...node, id: uid('n'), x: node.x + 36, y: node.y + 36 };
+      map.set(id, copy.id);
+      copies.push(copy);
+    });
+    cur().nodes.push(...copies);
+    const extraEdges = [];
+    cur().edges.forEach(edge => {
+      if (map.has(edge.from) && map.has(edge.to)) {
+        extraEdges.push({ ...edge, id: uid('e'), from: map.get(edge.from), to: map.get(edge.to) });
+      }
+    });
+    cur().edges.push(...extraEdges);
+    selNodes = new Set(copies.map(c => c.id));
+    selEdge = null;
+    render();
+    saveSoon();
+  }
+
+  /* ============================================================
+     Pan del lienzo
+     ============================================================ */
+  $vp.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0 && ev.button !== 1) return;
+    const hit = ev.target.closest ? ev.target.closest('.edge-hit') : null;
+    if (hit) {
+      ev.preventDefault();
+      selectEdge(hit.dataset.id);
+      return;
+    }
+    if (ev.target.closest('.node')) return;
+
+    const start = { x: ev.clientX, y: ev.clientY, vx: view.x, vy: view.y };
+    let moved = false;
+
+    const onMove = e => {
+      if (!moved) {
+        if (Math.hypot(e.clientX - start.x, e.clientY - start.y) < 3) return;
+        moved = true;
+        $vp.classList.add('panning');
+      }
+      view.x = start.vx + (e.clientX - start.x);
+      view.y = start.vy + (e.clientY - start.y);
+      applyView();
+    };
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      $vp.classList.remove('panning');
+      if (moved) {
+        saveSoon();
+      } else {
+        selNodes.clear();
+        selEdge = null;
+        connectFrom = null;
+        render();
+      }
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  });
+
+  $vp.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    const rect = $vp.getBoundingClientRect();
+    zoomAt(Math.exp(-ev.deltaY * 0.0015), ev.clientX - rect.left, ev.clientY - rect.top);
+  }, { passive: false });
+
+  $vp.addEventListener('dblclick', ev => {
+    if (ev.target.closest('.node') || ev.target.closest('.edge-hit')) return;
+    const point = toWorld(ev.clientX, ev.clientY);
+    createNode('concept', point.x, point.y);
+  });
+
+  /* ============================================================
+     Mapas
+     ============================================================ */
+  function switchBoard(id, options) {
+    const opts = options || {};
+    if (!store.boards.some(b => b.id === id)) return;
+    if (id === store.current && !opts.force) return;
+    if (!opts.skipSave) saveNow();
+    store.current = id;
+    selNodes.clear();
+    selEdge = null;
+    connectFrom = null;
+    setConnectMode(false);
+    history = [];
+    future = [];
+    editSnap = null;
+    lastInspectorKey = '';
+    boardUiKey = '';
+    query = '';
+    $('#search').value = '';
+    const saved = cur().view;
+    view = saved ? { x: saved.x, y: saved.y, k: saved.k } : { x: 0, y: 0, k: 1 };
+    render();
+    if (saved) applyView();
+    else requestAnimationFrame(fitView);
+    saveSoon();
+  }
+
+  function newBoard() {
+    saveNow();
+    const board = emptyBoard('Mapa ' + (store.boards.length + 1));
+    store.boards.push(board);
+    switchBoard(board.id);
+    toast('mapa nuevo');
+  }
+
+  function duplicateBoard() {
+    saveNow();
+    const source = cur();
+    const map = new Map();
+    const nodes = source.nodes.map(node => {
+      const copy = { ...node, id: uid('n') };
+      map.set(node.id, copy.id);
+      return copy;
+    });
+    const edges = source.edges.map(edge => ({
+      ...edge,
+      id: uid('e'),
+      from: map.get(edge.from),
+      to: map.get(edge.to)
+    }));
+    const copy = {
+      id: uid('b'),
+      name: source.name + ' (copia)',
+      nodes,
+      edges,
+      view: source.view ? { ...source.view } : null
+    };
+    store.boards.push(copy);
+    switchBoard(copy.id);
+    toast('mapa duplicado');
+  }
+
+  function deleteBoard() {
+    if (!confirm('¿Borrar el mapa «' + cur().name + '»? No se puede deshacer.')) return;
+    store.boards = store.boards.filter(b => b.id !== store.current);
+    if (!store.boards.length) store.boards.push(emptyBoard('Mapa 1'));
+    store.current = store.boards[0].id;
+    switchBoard(store.current, { force: true, skipSave: true });
+    toast('mapa borrado');
+  }
+
+  /* ============================================================
+     Exportar / importar
+     ============================================================ */
+  function dateTag() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes());
+  }
+
+  function slug(text) {
+    return (text || 'mapa').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50) || 'mapa';
+  }
+
+  function exportJSON() {
+    const payload = {
+      app: 'mapa-mental',
+      version: 1,
+      exported: new Date().toISOString(),
+      board: cur()
+    };
+    download('mapa-' + slug(cur().name) + '-' + dateTag() + '.json',
+      JSON.stringify(payload, null, 2), 'application/json');
+    toast('JSON descargado');
+  }
+
+  function outline() {
+    const board = cur();
+    const byId = new Map(board.nodes.map(n => [n.id, n]));
+    const seen = new Set();
+    const order = [];
+    const start = selNodes.size ? [...selNodes][0] : (board.nodes[0] && board.nodes[0].id);
+    const queue = start ? [start] : [];
+
+    while (queue.length) {
+      const id = queue.shift();
+      if (seen.has(id) || !byId.has(id)) continue;
+      seen.add(id);
+      order.push(id);
+      board.edges.forEach(edge => {
+        if (edge.from === id) queue.push(edge.to);
+        if (edge.to === id) queue.push(edge.from);
+      });
+    }
+    board.nodes.forEach(node => {
+      if (!seen.has(node.id)) {
+        seen.add(node.id);
+        order.push(node.id);
+      }
+    });
+
+    const lines = ['# ' + board.name, ''];
+    order.forEach((id, index) => {
+      const node = byId.get(id);
+      lines.push('## ' + (index + 1) + '. ' + (node.title.trim() || TYPES[node.type].ph));
+      lines.push('_' + TYPES[node.type].label.toLowerCase() + (node.done ? ' · hecha' : '') + '_');
+      if (node.body.trim()) {
+        lines.push('');
+        lines.push(node.body.trim());
+      }
+      const rel = [];
+      board.edges.forEach(edge => {
+        if (edge.from === id) {
+          const target = byId.get(edge.to);
+          if (!target) return;
+          rel.push('- → ' + (edge.label.trim() ? '**' + edge.label.trim() + '** · ' : '') + (target.title.trim() || '…'));
+        }
+        if (edge.to === id) {
+          const source = byId.get(edge.from);
+          if (!source) return;
+          rel.push('- ← ' + (edge.label.trim() ? '**' + edge.label.trim() + '** · ' : '') + (source.title.trim() || '…'));
+        }
+      });
+      if (rel.length) {
+        lines.push('');
+        lines.push(...rel);
+      }
+      lines.push('');
+    });
+    return lines.join('\n');
+  }
+
+  function exportMarkdown() {
+    download('mapa-' + slug(cur().name) + '-' + dateTag() + '.md', outline(), 'text/markdown');
+    toast('Markdown descargado');
+  }
+
+  function importJSON(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result || ''));
+        let incoming = [];
+        if (data && Array.isArray(data.boards)) incoming = data.boards;
+        else if (data && data.board && Array.isArray(data.board.nodes)) incoming = [data.board];
+        else if (data && Array.isArray(data.nodes)) incoming = [data];
+        if (!incoming.length) throw new Error('formato');
+
+        saveNow();
+        const added = [];
+        incoming.slice(0, 40).forEach(item => {
+          const board = normalizeBoard(item);
+          board.id = uid('b');
+          added.push(board);
+        });
+        store.boards.push(...added);
+        switchBoard(added[0].id);
+        toast(added.length === 1 ? 'mapa importado' : added.length + ' mapas importados');
+      } catch (e) {
+        toast('el archivo no es un mapa válido');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  /* ============================================================
+     Eventos de la interfaz
+     ============================================================ */
+  $('#btn-add-concept').addEventListener('click', () => addNodeAtCenter('concept'));
+  $('#btn-add-note').addEventListener('click', () => addNodeAtCenter('note'));
+  $('#btn-add-question').addEventListener('click', () => addNodeAtCenter('question'));
+
+  function setConnectMode(on) {
+    connectMode = on;
+    if (!on) connectFrom = null;
+    $('#btn-link').setAttribute('aria-pressed', String(on));
+    $vp.classList.toggle('link-mode', on);
+    $('#canvas-hint').textContent = on
+      ? 'toca el nodo origen y luego el destino · esc para salir'
+      : 'doble clic: crear · arrastra: mover · rueda: zoom';
+  }
+
+  $('#btn-link').addEventListener('click', () => {
+    setConnectMode(!connectMode);
+    render();
+    if (connectMode) toast('toca el nodo origen');
+  });
+
+  $('#btn-zoom-in').addEventListener('click', () => {
+    zoomAt(1.2, $vp.clientWidth / 2, $vp.clientHeight / 2);
+  });
+  $('#btn-zoom-out').addEventListener('click', () => {
+    zoomAt(1 / 1.2, $vp.clientWidth / 2, $vp.clientHeight / 2);
+  });
+  $('#btn-zoom-label').addEventListener('click', () => {
+    zoomAt(1 / view.k, $vp.clientWidth / 2, $vp.clientHeight / 2);
+  });
+  $('#btn-fit').addEventListener('click', fitView);
+
+  $('#btn-full').addEventListener('click', async () => {
+    try {
+      if (!document.fullscreenElement) await $('#stage').requestFullscreen();
+      else await document.exitFullscreen();
+    } catch (e) {
+      toast('este navegador no permite pantalla completa');
+    }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    $('#btn-full').textContent = document.fullscreenElement ? '⤢' : '⛶';
+  });
+
+  $('#btn-undo').addEventListener('click', undo);
+  $('#btn-redo').addEventListener('click', redo);
+
+  $('#node-title').addEventListener('focus', beginEdit);
+  $('#node-title').addEventListener('blur', endEdit);
+  $('#node-title').addEventListener('input', ev => {
+    const node = singleNode();
+    if (!node) return;
+    node.title = ev.target.value.slice(0, 200);
+    refreshNodeDom(node);
+  });
+
+  $('#node-body').addEventListener('focus', beginEdit);
+  $('#node-body').addEventListener('blur', endEdit);
+  $('#node-body').addEventListener('input', ev => {
+    const node = singleNode();
+    if (!node) return;
+    node.body = ev.target.value.slice(0, 8000);
+    refreshNodeDom(node);
+  });
+
+  $('#node-type').addEventListener('change', ev => {
+    const node = singleNode();
+    if (!node) return;
+    pushHistory();
+    node.type = TYPES[ev.target.value] ? ev.target.value : 'concept';
+    node.color = DEFAULT_COLOR[node.type];
+    render();
+    saveSoon();
+  });
+
+  $('#node-done').addEventListener('change', ev => {
+    const node = singleNode();
+    if (!node) return;
+    pushHistory();
+    node.done = ev.target.checked;
+    render();
+    saveSoon();
+  });
+
+  $('#btn-connect-from').addEventListener('click', () => {
+    const node = singleNode();
+    if (!node) return;
+    setConnectMode(true);
+    connectFrom = node.id;
+    render();
+    toast('toca el nodo destino');
+  });
+
+  $('#btn-dup-node').addEventListener('click', duplicateSelection);
+  $('#btn-del-node').addEventListener('click', deleteSelection);
+
+  $('#edge-label').addEventListener('focus', beginEdit);
+  $('#edge-label').addEventListener('blur', endEdit);
+  $('#edge-label').addEventListener('input', ev => {
+    const edge = selEdge ? edgeById(selEdge) : null;
+    if (!edge) return;
+    edge.label = ev.target.value.slice(0, 120);
+    renderEdges();
+    saveSoon();
+  });
+
+  $('#edge-dir').addEventListener('change', ev => {
+    const edge = selEdge ? edgeById(selEdge) : null;
+    if (!edge) return;
+    pushHistory();
+    edge.dir = ev.target.value;
+    renderEdges();
+    saveSoon();
+  });
+
+  $('#edge-style').addEventListener('change', ev => {
+    const edge = selEdge ? edgeById(selEdge) : null;
+    if (!edge) return;
+    pushHistory();
+    edge.style = ev.target.value;
+    renderEdges();
+    saveSoon();
+  });
+
+  $('#btn-del-edge').addEventListener('click', deleteSelection);
+
+  $('#board-name').addEventListener('input', ev => {
+    const value = ev.target.value.slice(0, 80);
+    cur().name = value || 'Mapa sin título';
+    boardUiKey = '';
+    renderBoardUI();
+    saveSoon();
+  });
+  $('#board-select').addEventListener('change', ev => switchBoard(ev.target.value));
+  $('#btn-new-board').addEventListener('click', newBoard);
+  $('#btn-dup-board').addEventListener('click', duplicateBoard);
+  $('#btn-del-board').addEventListener('click', deleteBoard);
+
+  $('#btn-export').addEventListener('click', exportJSON);
+  $('#btn-export-md').addEventListener('click', exportMarkdown);
+  $('#btn-copy-md').addEventListener('click', () => copyText(outline()));
+  $('#btn-import').addEventListener('click', () => $('#file').click());
+  $('#file').addEventListener('change', ev => {
+    const file = ev.target.files && ev.target.files[0];
+    if (file) importJSON(file);
+    ev.target.value = '';
+  });
+  $('#btn-clear').addEventListener('click', () => {
+    if (!cur().nodes.length && !cur().edges.length) return;
+    if (!confirm('¿Vaciar el mapa? Se borran todos los nodos y vínculos.')) return;
+    pushHistory();
+    cur().nodes = [];
+    cur().edges = [];
+    selNodes.clear();
+    selEdge = null;
+    render();
+    saveNow();
+  });
+
+  $('#search').addEventListener('input', ev => {
+    query = ev.target.value;
+    renderNodes();
+    renderEdges();
+  });
+  $('#search').addEventListener('keydown', ev => {
+    if (ev.key !== 'Enter') return;
+    const q = query.trim().toLowerCase();
+    if (!q) return;
+    const found = cur().nodes.find(n => (n.title + ' ' + n.body).toLowerCase().includes(q));
+    if (!found) { toast('sin resultados'); return; }
+    selNodes = new Set([found.id]);
+    selEdge = null;
+    render();
+    centerOn(found);
+  });
+
+  /* ---------- teclado ---------- */
+  document.addEventListener('keydown', ev => {
+    const target = ev.target;
+    const typing = target && (
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'SELECT' ||
+      target.isContentEditable
+    );
+    if (typing) return;
+
+    const mod = ev.ctrlKey || ev.metaKey;
+
+    if (mod && ev.key.toLowerCase() === 'z') {
+      ev.preventDefault();
+      if (ev.shiftKey) redo();
+      else undo();
+      return;
+    }
+    if (mod && ev.key.toLowerCase() === 'y') {
+      ev.preventDefault();
+      redo();
+      return;
+    }
+
+    if (ev.key === 'Delete' || ev.key === 'Backspace') {
+      if (selNodes.size || selEdge) {
+        ev.preventDefault();
+        deleteSelection();
+      }
+      return;
+    }
+
+    if (ev.key === 'Escape') {
+      setConnectMode(false);
+      selNodes.clear();
+      selEdge = null;
+      render();
+      return;
+    }
+
+    if (mod) return;
+
+    const key = ev.key.toLowerCase();
+    if (key === 'n') { ev.preventDefault(); addNodeAtCenter('concept'); return; }
+    if (key === 't') { ev.preventDefault(); addNodeAtCenter('note'); return; }
+    if (key === 'l') { ev.preventDefault(); $('#btn-link').click(); return; }
+    if (key === 'f') { ev.preventDefault(); fitView(); return; }
+
+    if (ev.key.startsWith('Arrow') && selNodes.size) {
+      ev.preventDefault();
+      const step = ev.shiftKey ? 2 : 10;
+      const now = Date.now();
+      if (now - moveStamp > 700) pushHistory();
+      moveStamp = now;
+      selNodes.forEach(id => {
+        const node = nodeById(id);
+        if (!node) return;
+        if (ev.key === 'ArrowLeft') node.x -= step;
+        if (ev.key === 'ArrowRight') node.x += step;
+        if (ev.key === 'ArrowUp') node.y -= step;
+        if (ev.key === 'ArrowDown') node.y += step;
+        const el = nodeEl(id);
+        if (el) {
+          el.style.left = node.x + 'px';
+          el.style.top = node.y + 'px';
+        }
+      });
+      renderEdges();
+      renderInspector();
+      saveSoon();
+    }
+  });
+
+  window.addEventListener('beforeunload', saveNow);
+
+  /* ============================================================
+     Arranque
+     ============================================================ */
+  COLORS.forEach(([name, hex]) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'swatch';
+    btn.dataset.color = name;
+    btn.style.setProperty('--c', hex);
+    btn.setAttribute('aria-label', 'Color ' + name);
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', () => {
+      const node = singleNode();
+      if (!node) return;
+      pushHistory();
+      node.color = name;
+      render();
+      saveSoon();
+    });
+    $('#node-colors').appendChild(btn);
+  });
+
+  render();
+  requestAnimationFrame(() => {
+    const saved = cur().view;
+    if (saved) {
+      view = { x: saved.x, y: saved.y, k: saved.k };
+      applyView();
+    } else {
+      fitView();
+    }
+  });
+})();
+</script>
+</body>
+</html>
